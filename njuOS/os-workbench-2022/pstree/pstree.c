@@ -14,9 +14,9 @@
  */
 
 int main(int argc, char *argv[]) {
-  unsigned char p = 0; // 打印每个进程的进程号
-  unsigned char n = 0; // 按照pid的大小输出
-  unsigned char v = 0; // 打印版本信息
+  char p = 0; // 打印每个进程的进程号
+  char n = 0; // 按照pid的大小输出
+  char v = 0; // 打印版本信息
 
   for (int i = 0; i < argc; i++) {
     assert(argv[i]);
