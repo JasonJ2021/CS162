@@ -63,11 +63,11 @@ int main(int argc, char *argv[])
       if(fp){
         fscanf(fp , "%d %s %c %d" , &pid , comm , &state, &ppid);
       }else{
-        close(fp);
+        fclose(fp);
         perror("File reading error \n");
         exit(1);
       }
-      close(fp);
+      fclose(fp);
       printf("process name = %d\n", atoi(dr->d_name));
       printf("pid = %d , process name = %s , state = %c , ppid = %d" , pid , comm , state , ppid);
     }
