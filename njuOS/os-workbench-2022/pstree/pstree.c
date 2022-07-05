@@ -45,9 +45,9 @@ int main(int argc, char *argv[]) {
   
   while(dr != NULL){
     printf("%s\n" , dr->d_name);
-    if(is_digits_composed(dr->d_name , 256)){
-      printf("process name = %d\n" , atoi(dr->d_name));
-    }
+    // if(is_digits_composed(dr->d_name , 256)){
+    //   printf("process name = %d\n" , atoi(dr->d_name));
+    // }
     dr = readdir(proc);
   }
   closedir(proc);
