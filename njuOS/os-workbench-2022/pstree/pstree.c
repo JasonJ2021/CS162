@@ -1,23 +1,12 @@
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
-#include <linux/sched.h>
-#include <linux/module.h>
-#include <linux/printk.h>
+#include <dirent.h>
+#include <stdlib.h>
 
-static int __init ex_init(void)
-{
-    struct task_struct *task;
 
-    for_each_process(task)
-        pr_info("%s [%d]\n", task->comm, task->pid);
-
-    return 0;
-}
-
-static void __exit ex_fini(void)
-{
-}
+int is_digits_composed(char * s , int len);
+int is_digit(char c);
 
 /**
  * @brief 
@@ -34,8 +23,7 @@ int main(int argc, char *argv[]) {
   char p = 0; // 打印每个进程的进程号
   char n = 0; // 按照pid的大小输出
   char v = 0; // 打印版本信息
-  ex_init();
-  ex_fini();
+  // ===================================命令行参数处理==========================================
   for (int i = 0; i < argc; i++) {
     assert(argv[i]);
     if(strcmp(argv[i] , "-V") == 0 || strcmp(argv[i] , "--version") == 0){
@@ -51,5 +39,32 @@ int main(int argc, char *argv[]) {
   }
   printf("p = %d , n = %d , v = %d\n" , p , n , v );
   assert(!argv[argc]);
+  // ==================================读取/proc=====================================================
+  DIR * proc = opendir("/proc");
+  struct dirent *dr = readdir(proc);
+  
+  while(dr != NULL){
+    if(is_digits_composed(dr->d_name , 256)){
+      printf(atoi(dr->d_name));
+    }
+    dr = readdir(proc);
+  }
+  closedir(proc);
+
+  return 0;
+}
+
+int is_digits_composed(char * s , int len){
+  for(int i = 0 ; i < len ; i++){
+    if(!is_digit(s[i])){
+      return 0;
+    }
+  }
+  return 1;
+}
+int is_digit(char c){
+  if (c <= '9' && c >= '0'){
+    return 1;
+  }
   return 0;
 }
