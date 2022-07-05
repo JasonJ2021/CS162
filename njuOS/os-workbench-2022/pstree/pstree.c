@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
 
     printf("argv[%d] = %s\n", i, argv[i]);
   }
-  printf("p = %c , n = %c , v = %c" , p , n , v );
+  printf("p = %c , n = %c , v = %c\n" , p , n , v );
   assert(!argv[argc]);
   return 0;
 }
