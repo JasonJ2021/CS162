@@ -56,9 +56,14 @@ int main(int argc, char *argv[]) {
 }
 
 int is_digits_composed(char * s , int len){
-  for(int i = 0 ; i < len ; i++){
+  int i ;
+  for(i = 0 ; i < len ; i++){
     if(!is_digit(s[i])){
-      return 0;
+      if(s[i] == '\0'){
+        return 1;
+      }else{
+        return 0;
+      }
     }
   }
   return 1;
