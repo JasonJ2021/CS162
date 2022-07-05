@@ -1,6 +1,23 @@
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
+#include <linux/sched.h>
+#include <linux/module.h>
+#include <linux/printk.h>
+
+static int __init ex_init(void)
+{
+    struct task_struct *task;
+
+    for_each_process(task)
+        pr_info("%s [%d]\n", task->comm, task->pid);
+
+    return 0;
+}
+
+static void __exit ex_fini(void)
+{
+}
 
 /**
  * @brief 
@@ -17,7 +34,8 @@ int main(int argc, char *argv[]) {
   char p = 0; // 打印每个进程的进程号
   char n = 0; // 按照pid的大小输出
   char v = 0; // 打印版本信息
-
+  ex_init();
+  ex_fini();
   for (int i = 0; i < argc; i++) {
     assert(argv[i]);
     if(strcmp(argv[i] , "-V") == 0 || strcmp(argv[i] , "--version") == 0){
@@ -29,8 +47,6 @@ int main(int argc, char *argv[]) {
     if(strcmp(argv[i] , "-p") == 0 || strcmp(argv[i] , "--show-pids") == 0){
       p = 1;
     }
-
-
     printf("argv[%d] = %s\n", i, argv[i]);
   }
   printf("p = %d , n = %d , v = %d\n" , p , n , v );
