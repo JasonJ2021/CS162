@@ -26,7 +26,7 @@ int main(int argc, char *argv[]) {
     if(strcmp(argv[i] , "-n") == 0 || strcmp(argv[i] , "--numeric-sort") == 0){
       n= 1;
     }
-    if(strcmp(argv[i] , "-V") == 0 || strcmp(argv[i] , "--version") == 0){
+    if(strcmp(argv[i] , "-p") == 0 || strcmp(argv[i] , "--show-pids") == 0){
       p = 1;
     }
 
