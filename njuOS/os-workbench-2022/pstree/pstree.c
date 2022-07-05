@@ -44,10 +44,10 @@ int main(int argc, char *argv[]) {
   struct dirent *dr = readdir(proc);
   
   while(dr != NULL){
-    printf("%s\n" , dr->d_name);
-    // if(is_digits_composed(dr->d_name , 256)){
-    //   printf("process name = %d\n" , atoi(dr->d_name));
-    // }
+    // printf("%s\n" , dr->d_name);
+    if(is_digits_composed(dr->d_name , 256)){
+      printf("process name = %d\n" , atoi(dr->d_name));
+    }
     dr = readdir(proc);
   }
   closedir(proc);
