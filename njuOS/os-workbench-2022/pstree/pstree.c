@@ -68,7 +68,8 @@ int main(int argc, char *argv[])
       pid_t ppid;
       memset(comm,0,256);
       if(fp){
-        fscanf(fp , "%d%s%c%d " , &pid , comm , &state, &ppid);
+        // fscanf(fp , "%d %s %c %d " , &pid , comm , &state, &ppid);
+        fscanf(fp , "%d" , &pid);
       }else{
         fclose(fp);
         perror("File reading error \n");
