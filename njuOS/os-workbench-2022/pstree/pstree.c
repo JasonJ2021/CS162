@@ -68,14 +68,14 @@ int main(int argc, char *argv[])
       pid_t ppid;
       memset(comm,0,256);
       if(fp){
-        fscanf(fp , "%d %s %c %d" , &pid , comm , &state, &ppid);
+        fscanf(fp , "%d %s %c %d " , &pid , comm , &state, &ppid);
       }else{
         fclose(fp);
         perror("File reading error \n");
         exit(1);
       }
       fclose(fp);
-      printf("process name = %d\n", atoi(dr->d_name));
+      printf("process id = %d\n", atoi(dr->d_name));
       printf("pid = %d , process name = %s , state = %c , ppid = %d\n" , pid , comm , state , ppid);
     }
     dr = readdir(proc);
