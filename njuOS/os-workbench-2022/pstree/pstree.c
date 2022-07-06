@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
       }
       fclose(fp);
       printf("process name = %d\n", atoi(dr->d_name));
-      printf("pid = %d , process name = %s , state = %c , ppid = %d" , pid , comm , state , ppid);
+      printf("pid = %d , process name = %s , state = %c , ppid = %d\n" , pid , comm , state , ppid);
     }
     dr = readdir(proc);
   }
