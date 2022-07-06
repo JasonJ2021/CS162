@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
         char buffer[1000];
         memset(buffer , 0 , 1000);
         fgets(buffer ,1000 , fp);
-        printf("%s" , buffer);
+        printf("buffer = %s\n" , buffer);
       }else{
         fclose(fp);
         perror("File reading error \n");
