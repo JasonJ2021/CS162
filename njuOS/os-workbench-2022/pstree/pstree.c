@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
       
       if(fp){
         fgets(buffer , 1000, fp );
-        printf("buffer = %s" , buffer);
+        printf("buffer = %s\n" , buffer);
         sscanf(buffer , "%d %s %c %d" , &pid , comm , &state, &ppid);
       }else{
         fclose(fp);
