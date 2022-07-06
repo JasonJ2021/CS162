@@ -62,13 +62,17 @@ int main(int argc, char *argv[])
     if (is_digits_composed(dr->d_name, 256))
     {
       FILE *fp = fopen(temp, "r");
+      char buffer[1000];
       pid_t pid;
       char comm[256];
       char state;
       pid_t ppid;
       memset(comm,0,256);
+      memset(buffer,0,1000);
+      
       if(fp){
-        fscanf(fp , "%d %s %c %d"... , &pid , comm , &state, &ppid);
+        fgets(buffer , 1000, fp );
+        sscanf(fp , "%d %s %c %d" , &pid , comm , &state, &ppid);
       }else{
         fclose(fp);
         perror("File reading error \n");
