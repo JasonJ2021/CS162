@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
       if(fp){
         fgets(buffer , 1000, fp );
         printf("buffer = %s\n" , buffer);
-        sscanf(buffer , "%d %s %c %d" , &pid , comm , &state, &ppid);
+        sscanf(buffer , "%d" , &pid);
       }else{
         fclose(fp);
         perror("File reading error \n");
@@ -81,7 +81,7 @@ int main(int argc, char *argv[])
       }
       fclose(fp);
       printf("process id = %d\n", atoi(dr->d_name));
-      printf("pid = %d , process name = %s , state = %c , ppid = %d\n" , pid , comm , state , ppid);
+      printf("pid = %d\n" , pid );
     }
     dr = readdir(proc);
   }
