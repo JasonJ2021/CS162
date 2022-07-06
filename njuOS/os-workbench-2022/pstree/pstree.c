@@ -76,6 +76,7 @@ int main(int argc, char *argv[])
         char *token = strtok(buffer , " ");
         pid = atoi(token);
         token = strtok(NULL , " ");
+        strcpy(comm,token);
         token = strtok(NULL , " ");
         token = strtok(NULL , " ");
         ppid = atoi(token);
@@ -85,7 +86,7 @@ int main(int argc, char *argv[])
         exit(1);
       }
       fclose(fp);
-      printf("pid = %d , ppid = %d\n" , pid ,ppid );
+      printf("pid = %d , name = %s ,ppid = %d\n" , pid ,comm , ppid );
     }
     dr = readdir(proc);
   }
