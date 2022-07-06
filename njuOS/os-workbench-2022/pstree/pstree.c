@@ -54,6 +54,7 @@ int main(int argc, char *argv[])
     printf("%s\n" , dr->d_name);
     if (is_digits_composed(dr->d_name, 256))
     {
+      printf("Debug\n");
       FILE *fp = fopen(strcat("/proc/" , dr->d_name ), "r");
       pid_t pid;
       char comm[256];
