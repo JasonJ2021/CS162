@@ -61,6 +61,7 @@ int main(int argc, char *argv[])
     printf("%s\n" ,strcat(temp , dr->d_name ) );
     if (is_digits_composed(dr->d_name, 256))
     {
+      strcat(temp , dr->d_name);
       FILE *fp = fopen(temp, "r");
       pid_t pid;
       char comm[256];
