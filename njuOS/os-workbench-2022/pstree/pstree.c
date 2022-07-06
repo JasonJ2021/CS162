@@ -71,7 +71,7 @@ int main(int argc, char *argv[])
       if(fp){
         char buffer[1000];
         memset(buffer , 0 , 1000);
-        fscanf("%s" , buffer);
+        fgets(buffer ,1000 , fp);
         printf("%s" , buffer);
       }else{
         fclose(fp);
