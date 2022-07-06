@@ -73,7 +73,12 @@ int main(int argc, char *argv[])
         char buffer[1000];
         memset(buffer , 0 , 1000);
         fgets(buffer ,1000 , fp);
-        printf("buffer = %s\n" , buffer);
+        char *token = strtok(buffer , " ");
+        pid = atoi(token);
+        token = strtok(NULL , " ");
+        token = strtok(NULL , " ");
+        token = strtok(NULL , " ");
+        ppid = atoi(token);
       }else{
         fclose(fp);
         perror("File reading error \n");
@@ -81,7 +86,7 @@ int main(int argc, char *argv[])
       }
       fclose(fp);
       printf("process id = %d\n", atoi(dr->d_name));
-      printf("pid = %d\n" , pid );
+      printf("pid = %d , ppid = %d\n" , pid ,ppid );
     }
     dr = readdir(proc);
   }
