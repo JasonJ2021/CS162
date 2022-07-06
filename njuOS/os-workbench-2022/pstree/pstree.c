@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
         char buffer[1000];
         memset(buffer , 0 , 1000);
         fscanf("%s" , buffer);
-        printf("%s" , buffer)
+        printf("%s" , buffer);
       }else{
         fclose(fp);
         perror("File reading error \n");
