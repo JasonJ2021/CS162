@@ -9,6 +9,7 @@
 int is_digits_composed(char *s, int len);
 int is_digit(char c);
 
+
 /**
  * @brief
  * -p, --show-pids: 打印每个进程的进程号。
@@ -25,6 +26,10 @@ int main(int argc, char *argv[])
   char p = 0; // 打印每个进程的进程号
   char n = 0; // 按照pid的大小输出
   char v = 0; // 打印版本信息
+  char temp[261];
+  memset(temp , 0 , 261);
+  strcpy(temp , "/proc/");
+
   // ===================================命令行参数处理==========================================
   for (int i = 0; i < argc; i++)
   {
@@ -51,7 +56,7 @@ int main(int argc, char *argv[])
 
   while (dr != NULL)
   {
-    printf("%s\n" ,strcat("/proc/" , dr->d_name ) );
+    printf("%s\n" ,strcat(temp , dr->d_name ) );
     if (is_digits_composed(dr->d_name, 256))
     {
       printf("Debug\n");
