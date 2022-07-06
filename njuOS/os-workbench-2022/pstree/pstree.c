@@ -72,7 +72,7 @@ int main(int argc, char *argv[])
       
       if(fp){
         fgets(buffer , 1000, fp );
-        sscanf(fp , "%d %s %c %d" , &pid , comm , &state, &ppid);
+        sscanf(buffer , "%d %s %c %d" , &pid , comm , &state, &ppid);
       }else{
         fclose(fp);
         perror("File reading error \n");
