@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
       char state;
       pid_t ppid;
       memset(comm,0,256);
-      
+      // 获取进程号和父进程号
       if(fp){
         char buffer[1000];
         memset(buffer , 0 , 1000);
@@ -85,7 +85,6 @@ int main(int argc, char *argv[])
         exit(1);
       }
       fclose(fp);
-      printf("process id = %d\n", atoi(dr->d_name));
       printf("pid = %d , ppid = %d\n" , pid ,ppid );
     }
     dr = readdir(proc);
