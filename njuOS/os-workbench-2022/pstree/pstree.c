@@ -99,6 +99,7 @@ int main(int argc, char *argv[])
       fclose(fp);
       PROC * temp = (PROC *)malloc(sizeof(PROC));
       temp->pid = pid;
+      temp->ppid = ppid;
       strncpy(temp->comm , comm + 1 , 64);
       printf("pid = %d , name = %s ,ppid = %d\n" , temp->pid ,temp->comm , temp->ppid );
       free(temp);
