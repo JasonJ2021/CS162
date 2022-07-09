@@ -23,16 +23,16 @@ typedef struct _proc
   pid_t pid;    //进程的Pid
   pid_t ppid;   //父进程的pid
   char comm[64]; // 进程的名字
-  PROC * parent; // 父进程
-  PROC * next;   // 用一个链表表示所有进程
-  CHILD * children; // 用一个链表表示进程的所有子进程
+  struct _proc * parent; // 父进程
+  struct _proc * next;   // 用一个链表表示所有进程
+  struct _child * children; // 用一个链表表示进程的所有子进程
 } PROC;
 
 typedef struct _child
 {
   /* data */
-  PROC *child;
-  CHILD *next;
+  struct _proc *child;
+  struct _child *next;
 } CHILD;
 
 
