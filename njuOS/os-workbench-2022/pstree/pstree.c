@@ -5,9 +5,15 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include 
 
 int is_digits_composed(char *s, int len);
 int is_digit(char c);
+typedef struct 
+{
+  // 进程的结构定义
+  
+}PROC;
 
 
 /**
@@ -64,10 +70,10 @@ int main(int argc, char *argv[])
       strcat(temp , "/stat");
       FILE *fp = fopen(temp, "r");
       pid_t pid;
-      char comm[256];
+      char comm[64];
       char state;
       pid_t ppid;
-      memset(comm,0,256);
+      memset(comm,0,64);
       // 获取进程号和父进程号
       if(fp){
         char buffer[1000];
@@ -76,9 +82,11 @@ int main(int argc, char *argv[])
         char *token = strtok(buffer , " ");
         pid = atoi(token);
         token = strtok(NULL , " ");
+        // 获取进程名称
         strcpy(comm,token);
         token = strtok(NULL , " ");
         token = strtok(NULL , " ");
+        // 获取父进程号
         ppid = atoi(token);
       }else{
         fclose(fp);
