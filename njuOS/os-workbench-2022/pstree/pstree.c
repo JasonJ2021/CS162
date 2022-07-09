@@ -9,6 +9,8 @@
 
 int is_digits_composed(char *s, int len);
 int is_digit(char c);
+void truncate(char *s);
+
 
 typedef struct 
 {
