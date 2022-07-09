@@ -132,8 +132,9 @@ int main(int argc, char *argv[])
   PROC *walk = list;
   while(walk){
     printf("pid = %d , ppid = %d , comm = %s\n" , walk->pid , walk->ppid , walk->comm );
+    walk = walk->next;
   }
-  
+
   return 0;
 }
 
