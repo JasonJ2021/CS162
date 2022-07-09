@@ -90,6 +90,7 @@ int main(int argc, char *argv[])
   {
     memset(temp, 0, 261);
     strcpy(temp, "/proc/");
+    strcat(temp, dr->d_name);
     // printf("%s\n", strcat(temp, dr->d_name));
     if (is_digits_composed(dr->d_name, 256))
     {
