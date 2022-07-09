@@ -10,6 +10,11 @@
 int is_digits_composed(char *s, int len);
 int is_digit(char c);
 void truncate_right_bracket(char *s);
+PROC *find_proc(pid_t pid);
+PROC *new_proc(char *comm, pid_t pid, pid_t ppid);
+void add_child(PROC *p, PROC *c);
+
+
 
 // 变量
 static int p = 0; // 打印每个进程的进程号
