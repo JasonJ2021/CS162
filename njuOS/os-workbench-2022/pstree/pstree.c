@@ -26,14 +26,14 @@ typedef struct _proc
   PROC * parent; // 父进程
   PROC * next;   // 用一个链表表示所有进程
   CHILD * children; // 用一个链表表示进程的所有子进程
-}PROC;
+} PROC;
 
 typedef struct _child
 {
   /* data */
   PROC *child;
   CHILD *next;
-}CHILD;
+} CHILD;
 
 
 /**
