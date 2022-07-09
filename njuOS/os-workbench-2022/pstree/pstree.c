@@ -125,13 +125,15 @@ int main(int argc, char *argv[])
       }
       fclose(fp);
       truncate_right_bracket(comm); // 除去最后一个)
-      printf("comn = %s\n" , comm + 1);
       PROC* temp_proc = new_proc(comm + 1 , pid, ppid);
     }
     dr = readdir(proc);
   }
   closedir(proc);
-
+  PROC * walk = list;
+  while(walk){
+    print("pid = %d , ppid = %d , comm = %s\n" , walk->pid , walk->ppid , walk->comm);
+  }
   return 0;
 }
 
