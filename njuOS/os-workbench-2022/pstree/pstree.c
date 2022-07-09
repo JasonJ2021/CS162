@@ -6,13 +6,7 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-// 函数
-int is_digits_composed(char *s, int len);
-int is_digit(char c);
-void truncate_right_bracket(char *s);
-PROC *find_proc(pid_t pid);
-PROC *new_proc(char *comm, pid_t pid, pid_t ppid);
-void add_child(PROC *p, PROC *c);
+
 
 
 
@@ -39,6 +33,16 @@ typedef struct _child
   struct _proc *child;
   struct _child *next;
 } CHILD;
+
+
+// 函数
+int is_digits_composed(char *s, int len);
+int is_digit(char c);
+void truncate_right_bracket(char *s);
+PROC *find_proc(pid_t pid);
+PROC *new_proc(char *comm, pid_t pid, pid_t ppid);
+void add_child(PROC *p, PROC *c);
+
 
 /**
  * @brief
