@@ -17,7 +17,7 @@ static int p = 0; // 打印每个进程的进程号
 static int n = 0; // 按照pid的大小输出
 static int v = 0; // 打印版本信息
 
-typedef struct 
+typedef struct _proc
 {
   // 进程的结构定义
   pid_t pid;    //进程的Pid
@@ -28,7 +28,7 @@ typedef struct
   CHILD * children; // 用一个链表表示进程的所有子进程
 }PROC;
 
-typedef struct 
+typedef struct _child
 {
   /* data */
   PROC *child;
