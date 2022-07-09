@@ -9,7 +9,7 @@
 
 int is_digits_composed(char *s, int len);
 int is_digit(char c);
-void truncate(char *s);
+void truncate_right_bracket(char *s);
 
 
 typedef struct 
@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
       PROC * temp = (PROC *)malloc(sizeof(PROC));
       temp->pid = pid;
       temp->ppid = ppid;
-      truncate(comm);
+      truncate_right_bracket(comm);
       strncpy(temp->comm , comm + 1 , 64);
       printf("pid = %d , name = %s ,ppid = %d\n" , temp->pid ,temp->comm , temp->ppid );
       free(temp);
@@ -143,7 +143,7 @@ int is_digit(char c)
 }
 
 // 用于删除一个字符串中的)
-void truncate(char *s){
+void truncate_right_bracket(char *s){
   int i = 0 ;
   while(s[i] != '\0' && s[i] != ')'){
     i++;
