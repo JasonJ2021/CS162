@@ -6,19 +6,34 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-
+// 函数
 int is_digits_composed(char *s, int len);
 int is_digit(char c);
 void truncate_right_bracket(char *s);
 
 
+// 变量
+static int p = 0; // 打印每个进程的进程号 
+static int n = 0; // 按照pid的大小输出
+static int v = 0; // 打印版本信息
+
 typedef struct 
 {
   // 进程的结构定义
-  pid_t pid;
-  pid_t ppid;
-  char comm[64]; 
+  pid_t pid;    //进程的Pid
+  pid_t ppid;   //父进程的pid
+  char comm[64]; // 进程的名字
+  PROC * parent; // 父进程
+  PROC * next;   // 用一个链表表示所有进程
+  CHILD * children; // 用一个链表表示进程的所有子进程
 }PROC;
+
+typedef struct 
+{
+  /* data */
+  PROC *child;
+  CHILD *next;
+}CHILD;
 
 
 /**
@@ -34,9 +49,6 @@ typedef struct
 
 int main(int argc, char *argv[])
 {
-  char p = 0; // 打印每个进程的进程号
-  char n = 0; // 按照pid的大小输出
-  char v = 0; // 打印版本信息
   char temp[261];
   memset(temp , 0 , 261);
   strcpy(temp , "/proc/");
@@ -64,7 +76,9 @@ int main(int argc, char *argv[])
   // ==================================读取/proc=====================================================
   DIR *proc = opendir("/proc");
   struct dirent *dr = readdir(proc);
-
+  
+  
+  // 遍历一个文件夹
   while (dr != NULL)
   {
     memset(temp , 0 , 261);
@@ -150,3 +164,4 @@ void truncate_right_bracket(char *s){
   }
   s[i] = '\0';
 }
+
