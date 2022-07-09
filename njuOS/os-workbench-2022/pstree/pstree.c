@@ -114,13 +114,8 @@ int main(int argc, char *argv[])
         exit(1);
       }
       fclose(fp);
-      PROC *temp = (PROC *)malloc(sizeof(PROC));
-      temp->pid = pid;
-      temp->ppid = ppid;
-      truncate_right_bracket(comm);
-      strncpy(temp->comm, comm + 1, 64);
-      printf("pid = %d , name = %s ,ppid = %d\n", temp->pid, temp->comm, temp->ppid);
-      free(temp);
+      truncate_right_bracket(comm); // 除去最后一个)
+      PROC* temp = new_proc(comm + 1 , pid, ppid);
     }
     dr = readdir(proc);
   }
