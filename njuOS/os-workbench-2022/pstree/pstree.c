@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
   closedir(proc);
   PROC * walk = list;
   while(walk){
-    print("pid = %d , ppid = %d , comm = %s\n" , walk->pid , walk->ppid , walk->comm);
+    printf("pid = %d , ppid = %d , comm = %s\n" , walk->pid , walk->ppid , walk->comm);
   }
   return 0;
 }
