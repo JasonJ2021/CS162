@@ -9,10 +9,13 @@
 
 int is_digits_composed(char *s, int len);
 int is_digit(char c);
+
 typedef struct 
 {
   // 进程的结构定义
-  
+  pid_t pid;
+  pid_t ppid;
+  char comm[64]; 
 }PROC;
 
 
@@ -70,10 +73,10 @@ int main(int argc, char *argv[])
       strcat(temp , "/stat");
       FILE *fp = fopen(temp, "r");
       pid_t pid;
-      char comm[64];
+      char comm[66];
       char state;
       pid_t ppid;
-      memset(comm,0,64);
+      memset(comm,0,66);
       // 获取进程号和父进程号
       if(fp){
         char buffer[1000];
@@ -94,7 +97,11 @@ int main(int argc, char *argv[])
         exit(1);
       }
       fclose(fp);
-      printf("pid = %d , name = %s ,ppid = %d\n" , pid ,comm , ppid );
+      PROC * temp = (PROC *)malloc(sizeof(PROC));
+      temp->pid = pid;
+      strncpy(temp->comm , comm + 1 , 64);
+      printf("pid = %d , name = %s ,ppid = %d\n" , temp->pid ,temp->comm , temp->ppid );
+      free(temp);
     }
     dr = readdir(proc);
   }
@@ -130,3 +137,4 @@ int is_digit(char c)
   }
   return 0;
 }
+
