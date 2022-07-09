@@ -122,6 +122,7 @@ int main(int argc, char *argv[])
         perror("File reading error \n");
         exit(1);
       }
+      printf("comn = %s\n" , comm + 1);
       fclose(fp);
       truncate_right_bracket(comm); // 除去最后一个)
       printf("comn = %s\n" , comm + 1);
