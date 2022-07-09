@@ -193,6 +193,7 @@ PROC *new_proc(char *comm, pid_t pid, pid_t ppid)
   new->ppid = ppid;
   new->next = list;
   list = new;
+  return new;
 }
 
 /**
