@@ -16,6 +16,7 @@ void truncate_right_bracket(char *s);
 static int p = 0; // 打印每个进程的进程号 
 static int n = 0; // 按照pid的大小输出
 static int v = 0; // 打印版本信息
+static struct _proc *list = NULL;
 
 typedef struct _proc
 {
@@ -165,3 +166,14 @@ void truncate_right_bracket(char *s){
   s[i] = '\0';
 }
 
+// 寻找一个进程号为pid的proc
+PROC * find_proc(pid_t pid){
+  PROC *temp = list;
+  while(temp){
+    if(temp->pid == pid){
+      return temp;
+    }
+    temp = temp->next;
+  }
+  return NULL;
+}
