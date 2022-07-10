@@ -39,9 +39,9 @@ PROC *new_proc(char *comm, pid_t pid, pid_t ppid);
 void add_child(PROC *p, PROC *c);
 void modify_proc(PROC *proc, char *comm, pid_t pid, pid_t ppid);
 char *print_tree();
-void print_tree_helper(PROC *proc, int indent, char *string);
-void print_leaf_node_helper(PROC *proc, int indent, char *string);
-void print_indent(int indent, char *string);
+void print_tree_helper(PROC *proc, int indent, char **string);
+void print_leaf_node_helper(PROC *proc, int indent, char **string);
+void print_indent(int indent, char **string);
 
 /**
  * @brief
@@ -295,19 +295,19 @@ char *print_tree()
 {
   int indent = 0;
   char *ans = "";
-  print_tree_helper(init, indent, ans);
+  print_tree_helper(init, indent, &ans);
   return ans;
 }
 
-void print_tree_helper(PROC *proc, int indent, char *string)
+void print_tree_helper(PROC *proc, int indent, char **string)
 {
   for (int i = 0; i < indent; i++)
   {
-    asprintf(&string, "%s%s", string, "|  ");
+    asprintf(string, "%s%s", *string, "|  ");
   }
-  asprintf(&string, "%s%s", string, "+--");
-  asprintf(&string, "%s%s", string, proc->comm);
-  asprintf(&string, "%s\n", string);
+  asprintf(string, "%s%s", *string, "+--");
+  asprintf(string, "%s%s", *string, proc->comm);
+  asprintf(string, "%s\n", *string);
   CHILD *walk = proc->children;
   while (walk != NULL)
   {
@@ -324,21 +324,21 @@ void print_tree_helper(PROC *proc, int indent, char *string)
   }
 }
 
-void print_leaf_node_helper(PROC *proc, int indent, char *string)
-{
-    for (int i = 0; i < indent; i++)
-  {
-    asprintf(&string, "%s%s", string, "|  ");
-  }
-  asprintf(&string, "%s%s", string, "+--");
-  asprintf(&string, "%s%s", string, proc->comm);
-  asprintf(&string, "%s\n", string);
-}
-
-void print_indent(int indent, char *string)
+void print_leaf_node_helper(PROC *proc, int indent, char **string)
 {
   for (int i = 0; i < indent; i++)
   {
-    asprintf(&string, "%s%s", string, "|  ");
+    asprintf(string, "%s%s", *string, "|  ");
+  }
+  asprintf(string, "%s%s", *string, "+--");
+  asprintf(string, "%s%s", *string, proc->comm);
+  asprintf(string, "%s\n", *string);
+}
+
+void print_indent(int indent, char **string)
+{
+  for (int i = 0; i < indent; i++)
+  {
+    asprintf(string, "%s%s", *string, "|  ");
   }
 }
