@@ -307,6 +307,9 @@ void print_tree_helper(PROC *proc, int indent, char **string)
   }
   asprintf(string, "%s%s", *string, "+--");
   asprintf(string, "%s%s", *string, proc->comm);
+  if(p){
+    asprintf(string, "%s(%d)", *string , proc->pid);
+  }
   asprintf(string, "%s\n", *string);
   CHILD *walk = proc->children;
   while (walk != NULL)
@@ -332,6 +335,9 @@ void print_leaf_node_helper(PROC *proc, int indent, char **string)
   }
   asprintf(string, "%s%s", *string, "+--");
   asprintf(string, "%s%s", *string, proc->comm);
+  if(p){
+    asprintf(string, "%s(%d)", *string , proc->pid);
+  }
   asprintf(string, "%s\n", *string);
 }
 
