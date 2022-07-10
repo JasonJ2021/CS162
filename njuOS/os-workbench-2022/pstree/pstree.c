@@ -22,7 +22,6 @@ typedef struct _proc
   pid_t pid;               //进程的Pid
   pid_t ppid;              //父进程的pid
   char comm[64];           // 进程的名字
-  struct _proc *parent;    // 父进程
   struct _proc *next;      // 用一个链表表示所有进程
   struct _child *children; // 用一个链表表示进程的所有子进程
 } PROC;
@@ -125,8 +124,20 @@ int main(int argc, char *argv[])
       }
       fclose(fp);
       truncate_right_bracket(comm); // 除去最后一个)
-      PROC* temp_proc = new_proc(comm + 1 , pid, ppid);
-      
+      // 添加到proc链表中
+      PROC* temp_proc;
+      // 查看是否之前被加入过，需要修改相应的comn , pid , ppid , 没有加入过那么创建一个
+      if((temp_proc = find_proc(pid) ) == NULL){
+        temp_proc = new_proc(comm + 1 , pid, ppid);
+      }else{
+        modify_proc(temp_proc , comm + 1 , pid , ppid);
+      }
+      // 添加该process到父进程
+      PROC* parent_proc = find_proc(ppid);
+      if(parent_proc == NULL){
+        parent_proc = new_proc("temp parent" ,0 , 0);
+      }
+      add_child(parent_proc , temp_proc);
     }
     dr = readdir(proc);
   }
@@ -254,4 +265,11 @@ void add_child(PROC *p, PROC *c)
       p->children = new_child;
     }
   }
+}
+
+
+void modify_proc(PROC *proc , char *comm , pid_t pid , pid_t ppid){
+  proc->pid = pid;
+  proc->ppid = ppid;
+  strncpy(proc->comm , comm , 64);
 }
