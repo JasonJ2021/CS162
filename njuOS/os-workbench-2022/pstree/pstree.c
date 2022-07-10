@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
     {
       p = 1;
     }
-    printf("argv[%d] = %s\n", i, argv[i]);
+    // printf("argv[%d] = %s\n", i, argv[i]);
   }
   assert(!argv[argc]);
   if(v){
