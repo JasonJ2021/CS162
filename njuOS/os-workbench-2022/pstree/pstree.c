@@ -126,6 +126,7 @@ int main(int argc, char *argv[])
       fclose(fp);
       truncate_right_bracket(comm); // 除去最后一个)
       PROC* temp_proc = new_proc(comm + 1 , pid, ppid);
+      
     }
     dr = readdir(proc);
   }
