@@ -152,7 +152,8 @@ int main(int argc, char *argv[])
     dr = readdir(proc);
   }
   closedir(proc);
-  char *string = print
+  char *string = print_tree();
+  printf("%s" , string);
   // PROC *walk = list;
   // while (walk)
   // {
