@@ -291,17 +291,20 @@ void modify_proc(PROC *proc, char *comm, pid_t pid, pid_t ppid)
   strncpy(proc->comm, comm, 64);
 }
 
+char *print_tree()
+{
+  int indent = 0;
+  char *ans = NULL;
+  print_tree_helper(init, indent, ans);
+  return ans;
+}
 
 void print_tree_helper(PROC *proc, int indent, char *string)
 {
   print_indent(indent, string);
-  printf( "%s",string);
   asprintf(&string, "%s%s", string, "+--");
-  printf( "%s",string);
   asprintf(&string, "%s%s", string, proc->comm);
-  printf( "%s",string);
   asprintf(&string, "%s\n", string);
-  printf( "%s",string);
   CHILD *walk = proc->children;
   while (walk != NULL)
   {
@@ -318,24 +321,12 @@ void print_tree_helper(PROC *proc, int indent, char *string)
   }
 }
 
-char *print_tree()
-{
-  int indent = 0;
-  char *ans = NULL;
-  print_tree_helper(init, indent, ans);
-  return ans;
-}
-
 void print_leaf_node_helper(PROC *proc, int indent, char *string)
 {
   print_indent(indent, string);
-  printf( "%s",string);
   asprintf(&string, "%s%s", string, "+--");
-  printf( "%s",string);
   asprintf(&string, "%s%s", string, proc->comm);
-  printf( "%s",string);
   asprintf(&string, "%s\n", string);
-  printf( "%s",string);
 }
 
 void print_indent(int indent, char *string)
