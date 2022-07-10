@@ -78,8 +78,13 @@ int main(int argc, char *argv[])
     }
     printf("argv[%d] = %s\n", i, argv[i]);
   }
-  printf("p = %d , n = %d , v = %d\n", p, n, v);
   assert(!argv[argc]);
+  if(v){
+    // 打印版本信息
+    char *v = NULL;
+    asprintf(&v,"JasonJ's PStree\n v1.0 , 2022/7/10\n");
+    printf("%s" , v);
+  }
   // ==================================读取/proc=====================================================
   DIR *proc = opendir("/proc");
   struct dirent *dr = readdir(proc);
