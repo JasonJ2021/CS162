@@ -1,4 +1,4 @@
-#define _GNU_SOURCE 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
@@ -38,10 +38,10 @@ PROC *find_proc(pid_t pid);
 PROC *new_proc(char *comm, pid_t pid, pid_t ppid);
 void add_child(PROC *p, PROC *c);
 void modify_proc(PROC *proc, char *comm, pid_t pid, pid_t ppid);
-char* print_tree();
-void print_tree_helper(PROC *proc , int indent , char *string);
-void print_leaf_node_helper(PROC *proc , int indent , char *string);
-void print_indent(int indent , char *string);
+char *print_tree();
+void print_tree_helper(PROC *proc, int indent, char *string);
+void print_leaf_node_helper(PROC *proc, int indent, char *string);
+void print_indent(int indent, char *string);
 
 /**
  * @brief
@@ -153,7 +153,7 @@ int main(int argc, char *argv[])
   }
   closedir(proc);
   char *string = print_tree();
-  printf("%s" , string);
+  printf("%s", string);
   // PROC *walk = list;
   // while (walk)
   // {
@@ -291,40 +291,49 @@ void modify_proc(PROC *proc, char *comm, pid_t pid, pid_t ppid)
   strncpy(proc->comm, comm, 64);
 }
 
-char* print_tree(){
-  int indent = 0;
-  char *ans = NULL;
-  print_tree_helper(init , indent , ans);
-  return ans;
-}
 
-
-void print_tree_helper(PROC *proc , int indent , char *string){
-  print_indent(indent , string);
-  asprintf(&string , "%s%s" ,string , "+--");
-  asprintf(&string , "%s%s" ,string , proc->comm);
-  asprintf(&string , "%s\n",string);
+void print_tree_helper(PROC *proc, int indent, char *string)
+{
+  print_indent(indent, string);
+  asprintf(&string, "%s%s", string, "+--");
+  asprintf(&string, "%s%s", string, proc->comm);
+  asprintf(&string, "%s\n", string);
   CHILD *walk = proc->children;
-  while(walk != NULL){
-    if(walk->child->children == NULL){
+  while (walk != NULL)
+  {
+    if (walk->child->children == NULL)
+    {
       // 如果是叶子节点，直接输出
-      print_leaf_node_helper(walk->child , indent + 1 , string);
-    }else{
-      print_tree_helper(walk->child , indent + 1 , string);
+      print_leaf_node_helper(walk->child, indent + 1, string);
+    }
+    else
+    {
+      print_tree_helper(walk->child, indent + 1, string);
     }
     walk = walk->next;
   }
 }
 
-void print_leaf_node_helper(PROC *proc , int indent , char *string){
-  print_indent(indent , string);
-  asprintf(&string , "%s%s" ,string , "+--");
-  asprintf(&string , "%s%s" ,string , proc->comm);
-  asprintf(&string , "%s\n",string);
+char *print_tree()
+{
+  int indent = 0;
+  char *ans = NULL;
+  print_tree_helper(init, indent, ans);
+  return ans;
 }
 
-void print_indent(int indent , char *string){
-  for(int i = 0 ; i < indent ; i++){
-    asprintf(&string , "%s%s" , string , "|  ");
+void print_leaf_node_helper(PROC *proc, int indent, char *string)
+{
+  print_indent(indent, string);
+  asprintf(&string, "%s%s", string, "+--");
+  asprintf(&string, "%s%s", string, proc->comm);
+  asprintf(&string, "%s\n", string);
+}
+
+void print_indent(int indent, char *string)
+{
+  for (int i = 0; i < indent; i++)
+  {
+    asprintf(&string, "%s%s", string, "|  ");
   }
 }
