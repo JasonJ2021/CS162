@@ -294,7 +294,7 @@ void modify_proc(PROC *proc, char *comm, pid_t pid, pid_t ppid)
 char *print_tree()
 {
   int indent = 0;
-  char *ans = NULL;
+  volatile char *ans = NULL;
   print_tree_helper(init, indent, ans);
   return ans;
 }
