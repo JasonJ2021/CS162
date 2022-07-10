@@ -152,12 +152,13 @@ int main(int argc, char *argv[])
     dr = readdir(proc);
   }
   closedir(proc);
-  PROC *walk = list;
-  while (walk)
-  {
-    printf("pid = %d , ppid = %d , comm = %s\n", walk->pid, walk->ppid, walk->comm);
-    walk = walk->next;
-  }
+  char *string = print
+  // PROC *walk = list;
+  // while (walk)
+  // {
+  //   printf("pid = %d , ppid = %d , comm = %s\n", walk->pid, walk->ppid, walk->comm);
+  //   walk = walk->next;
+  // }
   return 0;
 }
 
@@ -291,7 +292,7 @@ void modify_proc(PROC *proc, char *comm, pid_t pid, pid_t ppid)
 
 char* print_tree(){
   int indent = 0;
-  char *ans;
+  char *ans = NULL;
   print_tree_helper(init , indent , ans);
   return ans;
 }
