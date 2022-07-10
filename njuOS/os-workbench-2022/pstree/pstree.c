@@ -329,9 +329,13 @@ char *print_tree()
 void print_leaf_node_helper(PROC *proc, int indent, char *string)
 {
   print_indent(indent, string);
+  printf( "%s",string);
   asprintf(&string, "%s%s", string, "+--");
+  printf( "%s",string);
   asprintf(&string, "%s%s", string, proc->comm);
+  printf( "%s",string);
   asprintf(&string, "%s\n", string);
+  printf( "%s",string);
 }
 
 void print_indent(int indent, char *string)
