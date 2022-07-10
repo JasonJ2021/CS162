@@ -1,3 +1,4 @@
+#define _GNU_SOURCE 
 #include <stdio.h>
 #include <assert.h>
 #include <string.h>
@@ -6,16 +7,12 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-
-
-
-
 // 变量
 static int p = 0; // 打印每个进程的进程号
 static int n = 0; // 按照pid的大小输出
 static int v = 0; // 打印版本信息
 static struct _proc *list = NULL;
-
+static struct _proc *init = NULL;
 typedef struct _proc
 {
   // 进程的结构定义
@@ -33,7 +30,6 @@ typedef struct _child
   struct _child *next;
 } CHILD;
 
-
 // 函数
 int is_digits_composed(char *s, int len);
 int is_digit(char c);
@@ -41,7 +37,9 @@ void truncate_right_bracket(char *s);
 PROC *find_proc(pid_t pid);
 PROC *new_proc(char *comm, pid_t pid, pid_t ppid);
 void add_child(PROC *p, PROC *c);
-void modify_proc(PROC *proc , char *comm , pid_t pid , pid_t ppid);
+void modify_proc(PROC *proc, char *comm, pid_t pid, pid_t ppid);
+char* print_tree();
+void print_tree_helper(PROC *proc , int indent , char *string);
 
 /**
  * @brief
@@ -124,27 +122,38 @@ int main(int argc, char *argv[])
       }
       fclose(fp);
       truncate_right_bracket(comm); // 除去最后一个)
+
       // 添加到proc链表中
-      PROC* temp_proc;
+      PROC *temp_proc;
       // 查看是否之前被加入过，需要修改相应的comn , pid , ppid , 没有加入过那么创建一个
-      if((temp_proc = find_proc(pid) ) == NULL){
-        temp_proc = new_proc(comm + 1 , pid, ppid);
-      }else{
-        modify_proc(temp_proc , comm + 1 , pid , ppid);
+      if ((temp_proc = find_proc(pid)) == NULL)
+      {
+        temp_proc = new_proc(comm + 1, pid, ppid);
+      }
+      else
+      {
+        modify_proc(temp_proc, comm + 1, pid, ppid);
       }
       // 添加该process到父进程
-      PROC* parent_proc = find_proc(ppid);
-      if(parent_proc == NULL){
-        parent_proc = new_proc("temp parent" ,0 , 0);
+      PROC *parent_proc = find_proc(ppid);
+      if (parent_proc == NULL)
+      {
+        parent_proc = new_proc("temp parent", 0, 0);
       }
-      add_child(parent_proc , temp_proc);
+      add_child(parent_proc, temp_proc);
+      // 找到pid = 1 的原始
+      if (pid == 1)
+      {
+        init = temp_proc;
+      }
     }
     dr = readdir(proc);
   }
   closedir(proc);
-  PROC * walk = list;
-  while(walk){
-    printf("pid = %d , ppid = %d , comm = %s\n" , walk->pid , walk->ppid , walk->comm);
+  PROC *walk = list;
+  while (walk)
+  {
+    printf("pid = %d , ppid = %d , comm = %s\n", walk->pid, walk->ppid, walk->comm);
     walk = walk->next;
   }
   return 0;
@@ -245,19 +254,23 @@ void add_child(PROC *p, PROC *c)
         prev = cur;
         cur = cur->next;
       }
-      if(prev == NULL){
+      if (prev == NULL)
+      {
         // 插入到最左端
         new_child->next = cur;
         p->children = new_child;
-      }else if(cur == NULL){
+      }
+      else if (cur == NULL)
+      {
         // 插入到最右端
         prev->next = new_child;
-      }else{
+      }
+      else
+      {
         // 插入到prev , cur之间
         new_child->next = cur;
         prev->next = new_child;
       }
-
     }
     else
     {
@@ -267,9 +280,47 @@ void add_child(PROC *p, PROC *c)
   }
 }
 
-
-void modify_proc(PROC *proc , char *comm , pid_t pid , pid_t ppid){
+void modify_proc(PROC *proc, char *comm, pid_t pid, pid_t ppid)
+{
   proc->pid = pid;
   proc->ppid = ppid;
-  strncpy(proc->comm , comm , 64);
+  strncpy(proc->comm, comm, 64);
+}
+
+char* print_tree(){
+  int indent = 0;
+  char *ans;
+  print_tree_helper(init , indent , ans);
+  return ans;
+}
+
+
+void print_tree_helper(PROC *proc , int indent , char *string){
+  print_indent(indent , string);
+  asprintf(&string , "%s%s" ,string , "+--");
+  asprintf(&string , "%s%s" ,string , proc->comm);
+  asprintf(&string , "%s\n",string);
+  CHILD *walk = proc->children;
+  while(walk != NULL){
+    if(walk->child->children == NULL){
+      // 如果是叶子节点，直接输出
+      print_leaf_node_helper(walk->child , indent + 1 , string);
+    }else{
+      print_tree_helper(walk->child , indent + 1 , string);
+    }
+    walk = walk->next;
+  }
+}
+
+void print_leaf_node_helper(PROC *proc , int indent , char *string){
+  print_indent(indent , string);
+  asprintf(&string , "%s%s" ,string , "+--");
+  asprintf(&string , "%s%s" ,string , proc->comm);
+  asprintf(&string , "%s\n",string);
+}
+
+void print_indent(int indent , char *string){
+  for(int i = 0 ; i < indent ; i++){
+    asprintf(&string , "%s%s" , string , "|  ");
+  }
 }
