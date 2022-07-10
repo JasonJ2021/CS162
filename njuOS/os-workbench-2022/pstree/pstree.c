@@ -40,6 +40,8 @@ void add_child(PROC *p, PROC *c);
 void modify_proc(PROC *proc, char *comm, pid_t pid, pid_t ppid);
 char* print_tree();
 void print_tree_helper(PROC *proc , int indent , char *string);
+void print_leaf_node_helper(PROC *proc , int indent , char *string);
+void print_indent(int indent , char *string);
 
 /**
  * @brief
