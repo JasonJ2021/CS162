@@ -295,13 +295,13 @@ void modify_proc(PROC *proc, char *comm, pid_t pid, pid_t ppid)
 void print_tree_helper(PROC *proc, int indent, char *string)
 {
   print_indent(indent, string);
-  printf(string);
+  printf( "%s",string);
   asprintf(&string, "%s%s", string, "+--");
-  printf(string);
+  printf( "%s",string);
   asprintf(&string, "%s%s", string, proc->comm);
-  printf(string);
+  printf( "%s",string);
   asprintf(&string, "%s\n", string);
-  printf(string);
+  printf( "%s",string);
   CHILD *walk = proc->children;
   while (walk != NULL)
   {
