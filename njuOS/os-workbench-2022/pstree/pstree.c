@@ -41,7 +41,7 @@ void truncate_right_bracket(char *s);
 PROC *find_proc(pid_t pid);
 PROC *new_proc(char *comm, pid_t pid, pid_t ppid);
 void add_child(PROC *p, PROC *c);
-
+void modify_proc(PROC *proc , char *comm , pid_t pid , pid_t ppid);
 
 /**
  * @brief
