@@ -74,6 +74,20 @@ void co_yield ()
       next_co_ptr->status = CO_RUNNING;
       asm volatile(
 #if __x86_64__
+          "movq %%rip, %0"
+          :
+          : "b"((uintptr_t)(next_co_ptr->stack + STACK_SIZE ))
+          : "memory"
+#else
+          "movl %%rip, %0"
+          :
+          : "b"((uintptr_t)(next_co_ptr->stack + STACK_SIZE -))
+          : "memory"
+#endif
+      );
+
+      asm volatile(
+#if __x86_64__
           "movq %0, %%rsp; movq %2, %%rdi; jmp *%1"
           :
           : "b"((uintptr_t)(next_co_ptr->stack + STACK_SIZE - 16)), "d"(next_co_ptr->func), "a"(next_co_ptr->arg)
