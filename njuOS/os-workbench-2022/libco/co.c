@@ -83,7 +83,7 @@ void co_yield ()
           : "b"((uintptr_t)(next_co_ptr->stack + STACK_SIZE - 16)), "d"(next_co_ptr->func), "a"(next_co_ptr->arg)
           : "memory"
 #else
-          "movl %%ecx , 0(%0);movl %0, %%esp; movl %2, 4(%0); call *%1"
+          "movl %%ecx , 0(%0);movl %0, %%esp; movl %2, 0(%0); call *%1"
           :
           : "b"((uintptr_t)(next_co_ptr->stack + STACK_SIZE - 8)), "d"(next_co_ptr->func), "a"(next_co_ptr->arg)
           : "memory"
