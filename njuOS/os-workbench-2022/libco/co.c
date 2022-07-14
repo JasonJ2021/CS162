@@ -76,13 +76,13 @@ void co_yield ()
 #if __x86_64__
           "movq %%rdi, 0(%0); movq %0, %%rsp; movq %2, %%rdi; jmp *%1"
           :
-          : "b"((uintptr_t)next_co_ptr->stack + STACK_SIZE - 16), "d"((uintptr_t)next_co_ptr->func), "a"(next_co_ptr->arg)
+          : "b"((uintptr_t)next_co_ptr->stack + STACK_SIZE - 16), "d"(next_co_ptr->func), "a"(next_co_ptr->arg)
           :"memory"
 #else
           "movl %%edi, 4(%0); movl %0, %%esp; movl %2, 0(%0); jmp *%1"
           :
-          : "b"((uintptr_t)next_co_ptr->stack + STACK_SIZE - 8), "d"((uintptr_t)next_co_ptr->func, "a"(next_co_ptr->arg))
-          :
+          : "b"((uintptr_t)next_co_ptr->stack + STACK_SIZE - 8), "d"(next_co_ptr->func, "a"(next_co_ptr->arg))
+          :"memory"
 #endif
       );
             asm volatile(
