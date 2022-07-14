@@ -3,6 +3,7 @@
 #include <setjmp.h>
 #include <stdint.h>
 #include <string.h>
+#include <stdlib.h>
 
 #define STACK_SIZE 8192
 #define CO_SIZE 128
