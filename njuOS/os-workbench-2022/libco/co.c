@@ -63,7 +63,7 @@ void co_wait(struct co *co)
 
 void co_yield ()
 {
-  int val = setjmp(current->context);
+  int val = setjmp(co_list[cur_co]->context);
   if (val == 0)
   {
     // 保存完寄存器现场之后，我们需要选择下一个协程进行切换
