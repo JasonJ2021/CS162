@@ -30,7 +30,7 @@ struct co
   jmp_buf context; // 寄存器现场 (setjmp.h)
   int loc;         // 位于数组的位置
   void *stack_ptr;
-  uint8_t stack[STACK_SIZE] __attribute__((aligned(8))); // 协程的堆栈
+  uint8_t stack[STACK_SIZE] __attribute__((aligned(16))); // 协程的堆栈
 };
 
 int cur_co = 0;
