@@ -19,7 +19,7 @@ enum co_status
 
 struct co
 {
-  char *name;
+  char name[64];
   void (*func)(void *); // co_start 指定的入口地址和参数
   void *arg;
 
@@ -37,7 +37,7 @@ struct co *co_list[CO_SIZE];
 struct co *co_start(const char *name, void (*func)(void *), void *arg)
 {
   struct co *new_co = (struct co *)malloc(sizeof(struct co));
-  new_co->name = name;
+  strcpy(new_co,name);
   new_co->func = func;
   new_co->arg = arg;
   new_co->status = CO_NEW;
@@ -55,7 +55,7 @@ void co_wait(struct co *co)
 
   free(co);
   co_list[co->loc] = NULL;
-  
+
 }
 
 void co_yield ()
@@ -106,7 +106,7 @@ void co_init()
     co_list[i] = NULL;
   }
   struct co *main_co = (struct co *)malloc(sizeof(struct co));
-  main_co->name = "main_co";
+  strcpy(main_co->name , "Main_co");
   main_co->func = NULL;
   main_co->arg = NULL;
   main_co->status = CO_RUNNING;
