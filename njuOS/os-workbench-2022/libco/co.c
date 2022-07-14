@@ -107,12 +107,10 @@ void co_yield ()
           "movq %0 , %%rsp"
           : 
           :"g"(next_co_ptr->stack_ptr)
-          :
 #else
           "movl %0 , %esp"
           : 
           :"g"(next_co_ptr->stack_ptr)
-          :
 #endif
       );
       next_co_ptr->func(next_co_ptr->arg);
