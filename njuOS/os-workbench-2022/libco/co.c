@@ -88,7 +88,7 @@ void co_yield ()
 
       asm volatile(
 #if __x86_64__
-          "movq %%rcx, 0(%0); movq %0, %%rsp; movq %2, %%rdi; call *%1"
+          "movq %%rdi, 0(%0); movq %0, %%rsp; movq %2, %%rdi; call *%1"
           :
           : "b"((uintptr_t)next_co_ptr->stack +STACK_SIZE - 16), "d"((uintptr_t)next_co_ptr->func), "a"((uintptr_t)next_co_ptr->arg)
 #else
