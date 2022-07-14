@@ -9,6 +9,8 @@
 #define CO_SIZE 128
 
 void co_init() __attribute__((constructor));
+int find_free_spot();
+int find_next_co();
 
 enum co_status
 {
@@ -38,7 +40,7 @@ struct co *co_list[CO_SIZE];
 struct co *co_start(const char *name, void (*func)(void *), void *arg)
 {
   struct co *new_co = (struct co *)malloc(sizeof(struct co));
-  strcpy(new_co,name);
+  strcpy(new_co->name,name);
   new_co->func = func;
   new_co->arg = arg;
   new_co->status = CO_NEW;
