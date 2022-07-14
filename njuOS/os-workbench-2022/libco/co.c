@@ -91,7 +91,19 @@ void co_yield ()
             );
       // 此时函数已经运行完毕
       next_co_ptr->status = CO_DEAD;
-    
+      asm volatile(
+      #if __x86_64__
+                "movq %0, %%rcx"
+                :
+                : "b"((uintptr_t)(next_co_ptr->stack + STACK_SIZE - 16))
+                : "memory"
+      #else
+                "movl %%ecx , 0(%0)"
+                :
+                : "b"((uintptr_t)(next_co_ptr->stack + STACK_SIZE - 8))
+                : "memory"
+      #endif
+            );
       co_yield ();
     }
     else
