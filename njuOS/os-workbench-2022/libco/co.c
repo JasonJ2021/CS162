@@ -25,12 +25,11 @@ struct co
   void (*func)(void *); // co_start 指定的入口地址和参数
   void *arg;
 
-
   enum co_status status; // 协程的状态
   // struct co *    waiter;  // 是否有其他协程在等待当前协程
-  jmp_buf context;           // 寄存器现场 (setjmp.h)
-  int loc;  // 位于数组的位置  
-  uint8_t stack[STACK_SIZE]__attribute__ (( aligned(8) )); // 协程的堆栈
+  jmp_buf context;                                       // 寄存器现场 (setjmp.h)
+  int loc;                                               // 位于数组的位置
+  uint8_t stack[STACK_SIZE] __attribute__((aligned(8))); // 协程的堆栈
 };
 
 int cur_co = 0;
@@ -39,7 +38,7 @@ struct co *co_list[CO_SIZE];
 struct co *co_start(const char *name, void (*func)(void *), void *arg)
 {
   struct co *new_co = (struct co *)malloc(sizeof(struct co));
-  strcpy(new_co->name,name);
+  strcpy(new_co->name, name);
   new_co->func = func;
   new_co->arg = arg;
   new_co->status = CO_NEW;
@@ -51,13 +50,13 @@ struct co *co_start(const char *name, void (*func)(void *), void *arg)
 
 void co_wait(struct co *co)
 {
-  while(co->status != CO_DEAD){
-    co_yield();
+  while (co->status != CO_DEAD)
+  {
+    co_yield ();
   }
 
   free(co);
   co_list[co->loc] = NULL;
-
 }
 
 void co_yield ()
@@ -72,40 +71,40 @@ void co_yield ()
     {
       // 如果新创建还没有运行的，需要进行堆栈的切换
       next_co_ptr->status = CO_RUNNING;
+
+      //       asm volatile(
+      // #if __x86_64__
+      //           "movq %0, %%rsp; movq %2, %%rdi; jmp *%1"
+      //           :
+      //           : "b"((uintptr_t)(next_co_ptr->stack + STACK_SIZE - 16)), "d"(next_co_ptr->func), "a"(next_co_ptr->arg)
+      //           : "memory"
+      // #else
+      //           "movl %0, %%esp; movl %2, 4(%0); jmp *%1"
+      //           :
+      //           : "b"((uintptr_t)(next_co_ptr->stack + STACK_SIZE - 8)), "d"(next_co_ptr->func), "a"(next_co_ptr->arg)
+      //           : "memory"
+      // #endif
+      //       );
+
       asm volatile(
 #if __x86_64__
-          "movq %%rip, 0(%0)"
-          :"=b"((uintptr_t)(next_co_ptr->stack + STACK_SIZE ))
-          : 
-          : "memory"
-#else
-          "movl %%eip, %0"
-          :"=b"((uintptr_t)(next_co_ptr->stack + STACK_SIZE ))
-          : 
-          : "memory"
-#endif
-      );
-      asm volatile(
-#if __x86_64__
-          "movq %0, %%rsp; movq %2, %%rdi; jmp *%1"
+          "movq %%rcx, 0(%0); movq %0, %%rsp; movq %2, %%rdi; call *%1"
           :
-          : "b"((uintptr_t)(next_co_ptr->stack + STACK_SIZE - 16)), "d"(next_co_ptr->func), "a"(next_co_ptr->arg)
-          : "memory"
+          : "b"((uintptr_t)next_co_ptr->stack +STACK_SIZE - 16), "d"((uintptr_t)next_co_ptr->func), "a"((uintptr_t)next_co_ptr->arg)
 #else
-          "movl %0, %%esp; movl %2, 4(%0); jmp *%1"
+          "movl %%ecx, 4(%0); movl %0, %%esp; movl %2, 0(%0); call *%1"
           :
-          : "b"((uintptr_t)(next_co_ptr->stack + STACK_SIZE - 8)), "d"(next_co_ptr->func), "a"(next_co_ptr->arg)
-          : "memory"
+          : "b"((uintptr_t)next_co_ptr->stack +STACK_SIZE - 8), "d"((uintptr_t)next_co_ptr->func), "a"((uintptr_t)next_co_ptr->arg)
 #endif
       );
       // 此时函数已经运行完毕
       next_co_ptr->status = CO_DEAD;
-      co_yield();
+      co_yield ();
     }
     else
     {
       // 如果已经运行了，直接进行longjmp
-      longjmp( next_co_ptr->context, 8);
+      longjmp(next_co_ptr->context, 8);
     }
   }
   else
@@ -122,7 +121,7 @@ void co_init()
     co_list[i] = NULL;
   }
   struct co *main_co = (struct co *)malloc(sizeof(struct co));
-  strcpy(main_co->name , "Main_co");
+  strcpy(main_co->name, "Main_co");
   main_co->func = NULL;
   main_co->arg = NULL;
   main_co->status = CO_RUNNING;
