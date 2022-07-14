@@ -80,7 +80,7 @@ void co_yield ()
 #else
           "movl %%edi, 4(%0); movl %0, %%esp; movl %2, 0(%0); call *%1"
           :
-          : "b"((uintptr_t)next_co_ptr->stack + STACK_SIZE - 8), "d"((uintptr_t)next_co_ptr->func, "a"((uintptr_t)next_co_ptr->arg)
+          : "b"((uintptr_t)next_co_ptr->stack + STACK_SIZE - 8), "d"((uintptr_t)next_co_ptr->func, "a"((uintptr_t)next_co_ptr->arg))
 #endif
       );
       //       asm volatile(
