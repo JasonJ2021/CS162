@@ -80,7 +80,7 @@ void co_yield ()
           : "memory"
 #else
           "movl %%eip, %0"
-          :"=b"((uintptr_t)(next_co_ptr->stack + STACK_SIZE -))
+          :"=b"((uintptr_t)(next_co_ptr->stack + STACK_SIZE ))
           : 
           : "memory"
 #endif
