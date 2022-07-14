@@ -4,7 +4,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#define STACK_SIZE 8192
+#define STACK_SIZE 65536
 #define CO_SIZE 128
 
 void co_init() __attribute__((constructor));
