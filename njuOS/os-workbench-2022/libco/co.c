@@ -92,16 +92,14 @@ void co_yield ()
       asm volatile(
 #if __x86_64__
           "movq %%rsp , %0"
-          : "=g"(cur_co_ptr->stack_ptr)
-          :
-          :
+          : "=g"(cur_co_ptr->stack_ptr);
 #else
           "movl %%esp , %0"
-          : "=g"(cur_co_ptr->stack_ptr)
-          :
-          :
+          : "=g"(cur_co_ptr->stack_ptr);
 #endif
       );
+
+
       asm volatile(
 #if __x86_64__
           "movq %0 , %%rsp"
