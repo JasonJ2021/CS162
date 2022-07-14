@@ -76,42 +76,19 @@ void co_yield ()
       // 如果新创建还没有运行的，需要进行堆栈的切换
       next_co_ptr->status = CO_RUNNING;
 
-      //       asm volatile(
-      // #if __x86_64__
-      //           "movq %0, %%rsp; movq %2, %%rdi; call *%1"
-      //           :
-      //           : "b"((uintptr_t)(next_co_ptr->stack + STACK_SIZE - 8)), "d"(next_co_ptr->func), "a"(next_co_ptr->arg)
-      //           : "memory"
-      // #else
-      //           "movl %0, %%esp; movl %2, 4(%0); call *%1"
-      //           :
-      //           : "b"((uintptr_t)(next_co_ptr->stack + STACK_SIZE - 8)), "d"(next_co_ptr->func), "a"(next_co_ptr->arg)
-      //           : "memory"
-      // #endif
-      //       );
-      asm volatile(
-#if __x86_64__
-          "movq %%rsp , %0"
-          : "=g"(cur_co_ptr->stack_ptr):
-#else
-          "movl %%esp , %0"
-          : "=g"(cur_co_ptr->stack_ptr):
-#endif
-      );
-
-
-      asm volatile(
-#if __x86_64__
-          "movq %0 , %%rsp"
-          : 
-          :"g"(next_co_ptr->stack_ptr)
-#else
-          "movl %0 , %esp"
-          : 
-          :"g"(next_co_ptr->stack_ptr)
-#endif
-      );
-      next_co_ptr->func(next_co_ptr->arg);
+            asm volatile(
+      #if __x86_64__
+                "movq %0, %%rsp; movq %2, %%rdi; call *%1"
+                :
+                : "b"((uintptr_t)(next_co_ptr->stack + STACK_SIZE - 8)), "d"(next_co_ptr->func), "a"(next_co_ptr->arg)
+                : "memory"
+      #else
+                "movl %0, %%esp; movl %2, 4(%0); call *%1"
+                :
+                : "b"((uintptr_t)(next_co_ptr->stack + STACK_SIZE - 8)), "d"(next_co_ptr->func), "a"(next_co_ptr->arg)
+                : "memory"
+      #endif
+            );
       // 此时函数已经运行完毕
       next_co_ptr->status = CO_DEAD;
       co_yield ();
