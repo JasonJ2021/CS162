@@ -93,12 +93,12 @@ void co_yield ()
       next_co_ptr->status = CO_DEAD;
       asm volatile(
       #if __x86_64__
-                "movq %0, %%rcx"
+                "movq 0(%0), %%rcx"
                 :
                 : "b"((uintptr_t)(next_co_ptr->stack + STACK_SIZE - 16))
                 : "memory"
       #else
-                "movl %%ecx , 0(%0)"
+                "movl 0(%0), %%ecx"
                 :
                 : "b"((uintptr_t)(next_co_ptr->stack + STACK_SIZE - 8))
                 : "memory"
