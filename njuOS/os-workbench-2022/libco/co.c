@@ -71,19 +71,19 @@ void co_yield ()
     {
       // 如果新创建还没有运行的，需要进行堆栈的切换
       next_co_ptr->status = CO_RUNNING;
-      asm volatile(
-        "movq %%rip , %0"
-        :"=b"(*(next_co_ptr->stack + STACK_SIZE - 8))
-        :
-        :
-      );
+      // asm volatile(
+      //   "movq %%rip , %0"
+      //   :"=r"(*(next_co_ptr->stack + STACK_SIZE - 8))
+      //   :
+      //   :
+      // );
 
 
             asm volatile(
       #if __x86_64__
                 "movq %0, %%rsp; movq %2, %%rdi; jmp *%1"
                 :
-                : "b"((uintptr_t)(next_co_ptr->stack + STACK_SIZE - 16)), "d"(next_co_ptr->func), "a"(next_co_ptr->arg)
+                : "b"((uintptr_t)(next_co_ptr->stack + STACK_SIZE - 8)), "d"(next_co_ptr->func), "a"(next_co_ptr->arg)
                 : "memory"
       #else
                 "movl %0, %%esp; movl %2, 4(%0); jmp *%1"
