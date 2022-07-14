@@ -27,8 +27,9 @@ struct co
 
   enum co_status status; // 协程的状态
   // struct co *    waiter;  // 是否有其他协程在等待当前协程
-  jmp_buf context;                                       // 寄存器现场 (setjmp.h)
-  int loc;                                               // 位于数组的位置
+  jmp_buf context; // 寄存器现场 (setjmp.h)
+  int loc;         // 位于数组的位置
+  void *stack_ptr;
   uint8_t stack[STACK_SIZE] __attribute__((aligned(8))); // 协程的堆栈
 };
 
@@ -42,6 +43,7 @@ struct co *co_start(const char *name, void (*func)(void *), void *arg)
   new_co->func = func;
   new_co->arg = arg;
   new_co->status = CO_NEW;
+  new_co->stack_ptr = new_co->stack + STACK_SIZE;
   int free_spot = find_free_spot();
   co_list[free_spot] = new_co;
   new_co->loc = free_spot;
@@ -65,6 +67,8 @@ void co_yield ()
   if (val == 0)
   {
     // 保存完寄存器现场之后，我们需要选择下一个协程进行切换
+
+    struct co *cur_co_ptr = co_list[cur_co];
     cur_co = find_next_co();
     struct co *next_co_ptr = co_list[cur_co];
     if (next_co_ptr->status == CO_NEW)
@@ -72,20 +76,46 @@ void co_yield ()
       // 如果新创建还没有运行的，需要进行堆栈的切换
       next_co_ptr->status = CO_RUNNING;
 
+      //       asm volatile(
+      // #if __x86_64__
+      //           "movq %0, %%rsp; movq %2, %%rdi; call *%1"
+      //           :
+      //           : "b"((uintptr_t)(next_co_ptr->stack + STACK_SIZE - 8)), "d"(next_co_ptr->func), "a"(next_co_ptr->arg)
+      //           : "memory"
+      // #else
+      //           "movl %0, %%esp; movl %2, 4(%0); call *%1"
+      //           :
+      //           : "b"((uintptr_t)(next_co_ptr->stack + STACK_SIZE - 8)), "d"(next_co_ptr->func), "a"(next_co_ptr->arg)
+      //           : "memory"
+      // #endif
+      //       );
       asm volatile(
 #if __x86_64__
-          "movq %0, %%rsp; movq %2, %%rdi; call *%1"
+          "movq %%rsp , %0"
+          : "=g"(cur_co_ptr->stack_ptr)
           :
-          : "b"((uintptr_t)(next_co_ptr->stack + STACK_SIZE)), "d"(next_co_ptr->func), "a"(next_co_ptr->arg)
-          : "memory"
+          :
 #else
-          "movl %0, %%esp; movl %2, 4(%0); call *%1"
+          "movl %%esp , %0"
+          : "=g"(cur_co_ptr->stack_ptr)
           :
-          : "b"((uintptr_t)(next_co_ptr->stack + STACK_SIZE - 8)), "d"(next_co_ptr->func), "a"(next_co_ptr->arg)
-          : "memory"
+          :
 #endif
       );
-
+      asm volatile(
+#if __x86_64__
+          "movq %0 , %%rsp"
+          : 
+          :"g"(next_co_ptr->stack_ptr)
+          :
+#else
+          "movl %0 , %esp"
+          : 
+          :"g"(next_co_ptr->stack_ptr)
+          :
+#endif
+      );
+      next_co_ptr->func(next_co_ptr->arg);
       // 此时函数已经运行完毕
       next_co_ptr->status = CO_DEAD;
       co_yield ();
@@ -115,6 +145,7 @@ void co_init()
   main_co->arg = NULL;
   main_co->status = CO_RUNNING;
   main_co->loc = 0;
+  main_co->stack_ptr = NULL;
   // 把main协程添加到协程list中
   co_list[cur_co] = main_co;
 }
