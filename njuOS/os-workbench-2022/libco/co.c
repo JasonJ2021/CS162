@@ -74,7 +74,6 @@ void co_yield ()
     if (next_co_ptr->status == CO_NEW)
     {
       // 如果新创建还没有运行的，需要进行堆栈的切换
-      // ((struct co *volatile)next_co_ptr)->status = CO_RUNNING;
       next_co_ptr->status = CO_RUNNING;
       asm volatile(
 #if __x86_64__
