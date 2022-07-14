@@ -73,7 +73,7 @@ void co_yield ()
       next_co_ptr->status = CO_RUNNING;
       asm volatile(
         "movq %%rip , %0"
-        :"=r"(*(next_co_ptr->stack + STACK_SIZE))
+        :"=r"(*(next_co_ptr->stack + STACK_SIZE - 8))
         :
         :
       );
