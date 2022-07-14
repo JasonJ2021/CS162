@@ -76,7 +76,7 @@ void co_yield ()
         :"=r"((uintptr_t)(next_co_ptr->stack + STACK_SIZE - 16))
         :
         :
-      )
+      );
 
 
             asm volatile(
