@@ -102,7 +102,7 @@ void co_yield ()
 
       asm volatile(
 #if __x86_64__
-          "movq (%0) , %%rsp"
+          "movq %0 , %%rsp"
           : 
           :"g"(next_co_ptr->stack_ptr)
 #else
