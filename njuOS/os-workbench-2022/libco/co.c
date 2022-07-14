@@ -74,8 +74,8 @@ void co_yield ()
     if (next_co_ptr->status == CO_NEW)
     {
       // 如果新创建还没有运行的，需要进行堆栈的切换
-      ((struct co *volatile)next_co_ptr)->status = CO_RUNNING;
-
+      // ((struct co *volatile)next_co_ptr)->status = CO_RUNNING;
+      next_co_ptr->status = CO_RUNNING;
       asm volatile(
 #if __x86_64__
           "movq %%rcx , 0(%0);movq %0, %%rsp; movq %2, %%rdi; call *%1"
@@ -89,7 +89,7 @@ void co_yield ()
           : "memory"
 #endif
       );
-      // 此时函数已经运行完毕
+      // 此时函数已经运行完毕 , gdb调试这里需要rcx寄存器的恢复
       asm volatile(
 #if __x86_64__
           "movq 0(%0), %%rcx"
