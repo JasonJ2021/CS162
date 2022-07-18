@@ -134,6 +134,32 @@ pintos_init (void)
     run_actions (argv);
   } else {
     // TODO: no command line passed to kernel. Run interactively 
+    while(1){
+      printf("PKUOS>");
+      char commands[128];
+      memset(commands , 0 , 128);
+      int loc = 0;
+      char key;
+      while(loc < 128 && (key = input_getc()) != '\r'){
+        putchar(key);
+        commands[loc++] = key;  
+      }
+      putchar('\n');
+      // input is too large
+      if(loc == 128){
+        printf("input is too large!\n");
+        break;
+      }
+
+      if(loc == 6 && memcmp(commands , "whoami" , loc) == 0){
+        printf("3200104166\n");
+      }else if(loc == 4 && memcpy(commands , "exit" , loc)){
+        break;
+      }else{
+        printf("invalid commaand\n");
+      }
+
+    }
   }
 
   /* Finish up. */
