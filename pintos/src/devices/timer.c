@@ -24,19 +24,33 @@ static int64_t ticks;
    Initialized by timer_calibrate(). */
 static unsigned loops_per_tick;
 
+/**
+ * @brief 创建一个sleep list
+ * 创建一个sleep_elem
+ */
+struct sleep_node {
+  struct semaphore sema;
+  int64_t start_time;
+  struct list_elem sleep_elem;
+  int64_t sleep_ticks;
+};
+static struct list sleep_list;
+
 static intr_handler_func timer_interrupt;
 static bool too_many_loops (unsigned loops);
 static void busy_wait (int64_t loops);
 static void real_time_sleep (int64_t num, int32_t denom);
 static void real_time_delay (int64_t num, int32_t denom);
+static void wakeup_sleep();
 
 /** Sets up the timer to interrupt TIMER_FREQ times per second,
    and registers the corresponding interrupt. */
 void
 timer_init (void) 
 {
-  pit_configure_channel (0, 2, TIMER_FREQ);
+  pit_configure_channel (0, 2, TIMER_FREQ); // 每秒发出TIMER_FREQ = 100次 时钟中断
   intr_register_ext (0x20, timer_interrupt, "8254 Timer");
+  list_init(&sleep_list); // 初始化sleep_list
 }
 
 /** Calibrates loops_per_tick, used to implement brief delays. */
@@ -92,8 +106,23 @@ timer_sleep (int64_t ticks)
   int64_t start = timer_ticks ();
 
   ASSERT (intr_get_level () == INTR_ON);
-  while (timer_elapsed (start) < ticks) 
-    thread_yield ();
+  if(ticks <= 0 ){
+    return;
+  }
+  // while (timer_elapsed (start) < ticks) 
+  //   thread_yield ();
+  // 初始化一个sleep node
+  struct sleep_node node;
+  node.sleep_ticks = ticks;
+  sema_init(&node.sema , 0);
+  enum intr_level old_level;
+  node.start_time = start;
+  old_level = intr_disable ();
+  list_push_back (&sleep_list, &node.sleep_elem);
+  intr_set_level (old_level);
+
+  // 进入睡眠
+  sema_down(&node.sema);
 }
 
 /** Sleeps for approximately MS milliseconds.  Interrupts must be
@@ -172,6 +201,7 @@ timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
   thread_tick ();
+  wakeup_sleep();
 }
 
 /** Returns true if LOOPS iterations waits for more than one timer
@@ -243,4 +273,25 @@ real_time_delay (int64_t num, int32_t denom)
      the possibility of overflow. */
   ASSERT (denom % 1000 == 0);
   busy_wait (loops_per_tick * num / 1000 * TIMER_FREQ / (denom / 1000)); 
+}
+
+
+static void wakeup_sleep(){
+  //   int64_t start = timer_ticks ();
+
+  // ASSERT (intr_get_level () == INTR_ON);
+  // while (timer_elapsed (start) < ticks) 
+  //   thread_yield ();
+  // 初始化一个sleep node
+  struct list_elem * e;
+  enum intr_level old_level = intr_disable ();
+
+  for( e = list_begin(&sleep_list) ; e != list_end(&sleep_list) ; e = list_next(e)){
+    struct sleep_node * t = list_entry(e,struct sleep_node,sleep_elem);
+    if(timer_elapsed(t->start_time) >= t->sleep_ticks){
+      sema_up(&t->sema);
+      list_remove(e);
+    }
+  }
+  intr_set_level (old_level);
 }

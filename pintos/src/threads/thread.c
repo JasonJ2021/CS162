@@ -297,7 +297,9 @@ thread_exit (void)
 }
 
 /** Yields the CPU.  The current thread is not put to sleep and
-   may be scheduled again immediately at the scheduler's whim. */
+   may be scheduled again immediately at the scheduler's whim. 
+   进入之前不需要关中断
+   */
 void
 thread_yield (void) 
 {
