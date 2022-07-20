@@ -242,7 +242,7 @@ thread_unblock (struct thread *t)
   t->status = THREAD_READY;
   intr_set_level (old_level);
 // 如果当前进入ready队列的线程优先级比当前运行的高，马上进行切换
-  if(t->priority > thread_current()->priority && idle_initialized){
+  if(t->priority > thread_current()->priority && strcmp(thread_current()->name , "idle") && strcmp(t->name , "main")){
     thread_yield();
   }
 }
@@ -343,6 +343,14 @@ void
 thread_set_priority (int new_priority) 
 {
   thread_current ()->priority = new_priority;
+  enum intr_level old_level;
+  old_level = intr_disable();
+  struct list_elem *t = list_max(&ready_list , priority_less , NULL);
+  struct thread *t_ptr = list_entry(t,struct thread , elem);
+  if(t_ptr->priority > new_priority){
+    thread_yield();
+  }
+  intr_set_level(old_level);
 }
 
 /** Returns the current thread's priority. */
@@ -398,6 +406,7 @@ idle (void *idle_started_ UNUSED)
   struct semaphore *idle_started = idle_started_;
   idle_thread = thread_current ();
   sema_up (idle_started);
+
   // idle_initialized = true;
   for (;;) 
     {
