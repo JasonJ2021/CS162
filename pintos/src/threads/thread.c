@@ -49,7 +49,7 @@ struct kernel_thread_frame
 static long long idle_ticks;    /**< # of timer ticks spent idle. */
 static long long kernel_ticks;  /**< # of timer ticks in kernel threads. */
 static long long user_ticks;    /**< # of timer ticks in user programs. */
-
+volatile static bool idle_initialized = false; /**< check idle is initialized */
 /** Scheduling. */
 #define TIME_SLICE 4            /**< # of timer ticks to give each thread. */
 static unsigned thread_ticks;   /**< # of timer ticks since last yield. */
@@ -98,6 +98,7 @@ thread_init (void)
   init_thread (initial_thread, "main", PRI_DEFAULT);
   initial_thread->status = THREAD_RUNNING;
   initial_thread->tid = allocate_tid ();
+  idle_initialized = false;
 }
 
 /** Starts preemptive thread scheduling by enabling interrupts.
@@ -240,6 +241,10 @@ thread_unblock (struct thread *t)
   list_push_back (&ready_list, &t->elem);
   t->status = THREAD_READY;
   intr_set_level (old_level);
+// 如果当前进入ready队列的线程优先级比当前运行的高，马上进行切换
+  if(t->priority > thread_current()->priority && idle_initialized){
+    thread_yield();
+  }
 }
 
 /** Returns the name of the running thread. */
@@ -393,7 +398,7 @@ idle (void *idle_started_ UNUSED)
   struct semaphore *idle_started = idle_started_;
   idle_thread = thread_current ();
   sema_up (idle_started);
-
+  // idle_initialized = true;
   for (;;) 
     {
       /* Let someone else run. */
@@ -492,10 +497,17 @@ alloc_frame (struct thread *t, size_t size)
 static struct thread *
 next_thread_to_run (void) 
 {
-  if (list_empty (&ready_list))
+  if (list_empty (&ready_list)){
     return idle_thread;
-  else
-    return list_entry (list_pop_front (&ready_list), struct thread, elem);
+  }else{
+    // 每次选取当前priority最大的线程执行
+    struct list_elem *t;
+    t = list_max(&ready_list , priority_less , NULL);
+    list_remove(t);
+    return list_entry( t , struct thread , elem);
+  }
+     
+    // return list_entry (list_pop_front (&ready_list), struct thread, elem);
 }
 
 /** Completes a thread switch by activating the new thread's page
@@ -580,6 +592,28 @@ allocate_tid (void)
 
   return tid;
 }
+
+/** 我们要求按照priority从大到小排序         */
+bool
+priority_larger (const struct list_elem *a_, const struct list_elem *b_,
+            void *aux UNUSED) 
+{
+  const struct thread *a = list_entry (a_, struct thread, elem);
+  const struct thread *b = list_entry (b_, struct thread, elem);
+  
+  return a->priority >= b->priority;
+}
+
+bool
+priority_less (const struct list_elem *a_, const struct list_elem *b_,
+            void *aux UNUSED) 
+{
+  const struct thread *a = list_entry (a_, struct thread, elem);
+  const struct thread *b = list_entry (b_, struct thread, elem);
+  
+  return a->priority < b->priority;
+}
+
 
 /** Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
