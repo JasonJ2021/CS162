@@ -219,16 +219,16 @@ lock_acquire (struct lock *lock)
   // 添加当前线程正在等待lock锁
   struct thread * cur_thread = thread_current();
   struct thread * waitfor_thread = lock->holder;
-  thread_current()->wait_for = lock;
+  cur_thread->wait_for = lock;
   // 当前的锁已经被持有，并且请求acquire线程的优先级比持有锁的线程优先级高，donate...
-  if(lock->holder != NULL && lock->holder->priority < thread_current()->priority){
-    struct list *donate_list = &lock->holder->donations;
+  if(waitfor_thread != NULL && waitfor_thread->priority < cur_thread->priority){
+    struct list *donate_list = &waitfor_thread->donations;
     // 如果当前donate_list为空，那么需要保存当前的priority , 以便之后恢复
     if(list_empty(donate_list) == true){
-      lock->holder->original_priority = lock->holder->priority;
+      waitfor_thread->original_priority = waitfor_thread->priority;
     }
-    list_push_back(donate_list , &thread_current()->donor_elem);
-    donate_priority(lock->holder , thread_current());
+    list_push_back(donate_list , &cur_thread->donor_elem);
+    donate_priority(lock->holder , cur_thread);
   }
   
   intr_set_level(old_value);
