@@ -89,6 +89,10 @@ struct thread
     uint8_t *stack;                     /**< Saved stack pointer. */
     int priority;                       /**< Priority. */
     struct list_elem allelem;           /**< List element for all threads list. */
+    struct lock *wait_for;              /**< 记录这个线程正在等待的锁.*/
+    struct list donations;              /**< 记录给这个线程的捐助者 .*/
+    struct list_elem donor_elem;        /**< 放在donations中的元素 .*/
+    int original_priority;              /**< 记录没有被捐助之前的priority .*/
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /**< List element. */
@@ -146,4 +150,5 @@ bool
 priority_less (const struct list_elem *a_, const struct list_elem *b_,
             void *aux UNUSED);
 
+void donate_priority(struct thread *donee , struct thread *donor);
 #endif /**< threads/thread.h */

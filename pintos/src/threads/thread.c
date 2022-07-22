@@ -479,6 +479,10 @@ init_thread (struct thread *t, const char *name, int priority)
   t->stack = (uint8_t *) t + PGSIZE;
   t->priority = priority;
   t->magic = THREAD_MAGIC;
+  t->wait_for = NULL;
+  t->original_priority = -1;
+  list_init(&t->donations);
+
 
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
@@ -623,6 +627,14 @@ priority_less (const struct list_elem *a_, const struct list_elem *b_,
   return a->priority < b->priority;
 }
 
+void donate_priority(struct thread *donee , struct thread *donor){
+  donee->priority = donor->priority;
+  struct thread *t = list_entry(list_max(&ready_list , priority_less,NULL) , struct thread , elem);
+  if(t->priority > thread_current()->priority){
+    thread_yield();
+  }
+  
+}
 
 /** Offset of `stack' member within `struct thread'.
    Used by switch.S, which can't figure it out on its own. */
