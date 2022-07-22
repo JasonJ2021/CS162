@@ -52,7 +52,6 @@ test_priority_donate_nest (void)
   thread_yield ();
   msg ("Low thread should have priority %d.  Actual priority: %d.",
        PRI_DEFAULT + 2, thread_get_priority ());
-
   lock_release (&a);
   thread_yield ();
   msg ("Medium thread should just have finished.");
@@ -64,7 +63,6 @@ static void
 medium_thread_func (void *locks_) 
 {
   struct locks *locks = locks_;
-
   lock_acquire (locks->b);
   lock_acquire (locks->a);
 

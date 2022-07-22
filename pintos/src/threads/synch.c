@@ -220,15 +220,27 @@ lock_acquire (struct lock *lock)
   struct thread * cur_thread = thread_current();
   struct thread * waitfor_thread = lock->holder;
   cur_thread->wait_for = lock;
+  bool flag = false;
   // 当前的锁已经被持有，并且请求acquire线程的优先级比持有锁的线程优先级高，donate...
-  if(waitfor_thread != NULL && waitfor_thread->priority < cur_thread->priority){
-    struct list *donate_list = &waitfor_thread->donations;
-    // 如果当前donate_list为空，那么需要保存当前的priority , 以便之后恢复
-    if(list_empty(donate_list) == true){
-      waitfor_thread->original_priority = waitfor_thread->priority;
+  while(waitfor_thread != NULL && waitfor_thread->priority < cur_thread->priority){
+    if(flag  == false){
+      struct list *donate_list = &waitfor_thread->donations;
+      // 如果当前donate_list为空，那么需要保存当前的priority , 以便之后恢复
+      if(list_empty(donate_list) == true){
+        waitfor_thread->original_priority = waitfor_thread->priority;
+      }
+      list_push_back(donate_list , &cur_thread->donor_elem);
+      donate_priority(waitfor_thread , cur_thread);
+      
+      flag = true;
+    }else{
+      waitfor_thread->priority = cur_thread->priority;
     }
-    list_push_back(donate_list , &cur_thread->donor_elem);
-    donate_priority(lock->holder , cur_thread);
+    if(waitfor_thread->wait_for != NULL){
+      waitfor_thread = waitfor_thread->wait_for->holder;
+    }else{
+      break;
+    }
   }
   
   intr_set_level(old_value);
@@ -280,6 +292,9 @@ lock_release (struct lock *lock)
       t->wait_for = NULL;
       list_remove(e->prev);
       continue;
+    }
+    if(list_end(donate_list) == e){
+      break;
     }
     e = list_next(e);
   }
