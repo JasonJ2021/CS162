@@ -217,6 +217,8 @@ lock_acquire (struct lock *lock)
   enum intr_level old_value;
   old_value = intr_disable();
   // 添加当前线程正在等待lock锁
+  struct thread * cur_thread = thread_current();
+  struct thread * waitfor_thread = lock->holder;
   thread_current()->wait_for = lock;
   // 当前的锁已经被持有，并且请求acquire线程的优先级比持有锁的线程优先级高，donate...
   if(lock->holder != NULL && lock->holder->priority < thread_current()->priority){
@@ -281,7 +283,7 @@ lock_release (struct lock *lock)
     }
     e = list_next(e);
   }
-  if(list_empty(donate_list) && thread_current()->original_priority > 0){
+  if(list_empty(donate_list) && thread_current()->original_priority >= 0){
     thread_current()->priority = thread_current()->original_priority;
   }else if(!list_empty(donate_list)){
     thread_current()->priority = list_entry(list_max(donate_list,priority_less_by_donorelem,NULL),struct thread,donor_elem)->priority;
