@@ -214,9 +214,9 @@ timer_interrupt (struct intr_frame *args UNUSED)
       thread_foreach(calc_recent_cpu, NULL);
       calc_load_avg();
     }
-    if(should_yield()){
-      intr_yield_on_return();
-    }
+    // if(should_yield()){
+    //   intr_yield_on_return();
+    // }
   }
   wakeup_sleep();
   intr_set_level(old_value);

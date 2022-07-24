@@ -246,7 +246,12 @@ thread_unblock (struct thread *t)
   intr_set_level (old_level);
 // 如果当前进入ready队列的线程优先级比当前运行的高，马上进行切换
   if(t->priority > thread_current()->priority && strcmp(thread_current()->name , "idle") && strcmp(t->name , "main")){
-    thread_yield();
+    if(intr_context()){
+      intr_yield_on_return();
+    }else{
+      thread_yield();
+    }
+
   }
 }
 
@@ -678,6 +683,15 @@ void calc_priority(struct thread*t , void *aux UNUSED){
   }
   t->priority = FIXED2INT(FIXED_ADD_INT(FIXED_DIV_INT(t->recent_cpu,-4),PRI_MAX - 2*t->nice));
 }
+void calc_priority_recent_cpu(struct thread*t , void *aux UNUSED){
+  if(t == idle_thread){
+    return;
+  }
+  t->priority = FIXED2INT(FIXED_ADD_INT(FIXED_DIV_INT(t->recent_cpu,-4),PRI_MAX - 2*t->nice));
+  int32_t delay = FIXED_DIV(FIXED_MUL_INT(load_avg,2),FIXED_ADD_INT(FIXED_MUL_INT(load_avg,2),1));
+  t->recent_cpu = FIXED_ADD_INT(FIXED_MUL(delay , t->recent_cpu) , t->nice);
+
+}
 
 bool should_yield(void){
   struct thread*t = list_entry(list_max(&ready_list , priority_less,NULL),struct thread , elem);
@@ -690,7 +704,7 @@ void incr_cpu_recent(void){
   if(thread_current() == idle_thread){
     return;
   }
-  FIXED_ADD_INT(thread_current()->recent_cpu , 1);
+  thread_current()->recent_cpu =  FIXED_ADD_INT(thread_current()->recent_cpu , 1);
 }
 
 /** Offset of `stack' member within `struct thread'.

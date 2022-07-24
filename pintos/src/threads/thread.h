@@ -158,4 +158,5 @@ void calc_recent_cpu(struct thread*t , void *aux UNUSED);
 void calc_priority(struct thread*t , void *aux UNUSED);
 bool should_yield(void);
 void incr_cpu_recent(void);
+void calc_priority_recent_cpu(struct thread*t , void *aux UNUSED);
 #endif /**< threads/thread.h */
