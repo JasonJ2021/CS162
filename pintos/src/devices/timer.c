@@ -117,8 +117,8 @@ timer_sleep (int64_t ticks)
   sema_init(&node.sema , 0);
   enum intr_level old_level;
   node.start_time = start;
-  old_level = intr_disable ();
   list_push_back (&sleep_list, &node.sleep_elem);
+  old_level = intr_disable ();
   intr_set_level (old_level);
 
   // 进入睡眠
@@ -201,7 +201,25 @@ timer_interrupt (struct intr_frame *args UNUSED)
 {
   ticks++;
   thread_tick ();
+  enum intr_level old_value = intr_disable();
+  
+  if(thread_mlfqs){
+    incr_cpu_recent();
+    if(ticks % 4 == 0){
+      // 每4个ticks更新一次所有thread的Priority
+      thread_foreach(calc_priority, NULL);
+    }
+    if(ticks % TIMER_FREQ == 0){
+      // 每一秒更新一次load_avg , recent_cpu
+      thread_foreach(calc_recent_cpu, NULL);
+      calc_load_avg();
+    }
+    if(should_yield()){
+      intr_yield_on_return();
+    }
+  }
   wakeup_sleep();
+  intr_set_level(old_value);
 }
 
 /** Returns true if LOOPS iterations waits for more than one timer
@@ -284,14 +302,15 @@ static void wakeup_sleep(){
   //   thread_yield ();
   // 初始化一个sleep node
   struct list_elem * e;
-  enum intr_level old_level = intr_disable ();
 
-  for( e = list_begin(&sleep_list) ; e != list_end(&sleep_list) ; e = list_next(e)){
+  for( e = list_begin(&sleep_list) ; e != list_end(&sleep_list) ; ){
     struct sleep_node * t = list_entry(e,struct sleep_node,sleep_elem);
     if(timer_elapsed(t->start_time) >= t->sleep_ticks){
       sema_up(&t->sema);
-      list_remove(e);
+      e = list_next(e);
+      list_remove(e->prev);
+      continue;
     }
+    e = list_next(e);
   }
-  intr_set_level (old_level);
 }

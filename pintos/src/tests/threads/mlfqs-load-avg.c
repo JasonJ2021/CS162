@@ -137,8 +137,10 @@ test_mlfqs_load_avg (void)
       snprintf(name, sizeof name, "load %d", i);
       thread_create (name, PRI_DEFAULT, load_thread, (void *) i);
     }
+  int load_avg;
+  load_avg = thread_get_load_avg ();
   msg ("Starting threads took %d seconds.",
-       timer_elapsed (start_time) / TIMER_FREQ);
+      timer_elapsed (start_time) / TIMER_FREQ);
   thread_set_nice (-20);
 
   for (i = 0; i < 90; i++) 
@@ -156,9 +158,9 @@ static void
 load_thread (void *seq_no_) 
 {
   int seq_no = (int) seq_no_;
-  int sleep_time = TIMER_FREQ * (10 + seq_no);
-  int spin_time = sleep_time + TIMER_FREQ * THREAD_CNT;
-  int exit_time = TIMER_FREQ * (THREAD_CNT * 2);
+  int sleep_time = TIMER_FREQ * (10 + seq_no); // 沉睡10 + i 秒
+  int spin_time = sleep_time + TIMER_FREQ * THREAD_CNT; // spin 60秒
+  int exit_time = TIMER_FREQ * (THREAD_CNT * 2);        // 120秒之后退出
 
   timer_sleep (sleep_time - timer_elapsed (start_time));
   while (timer_elapsed (start_time) < spin_time)

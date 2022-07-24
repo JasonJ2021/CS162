@@ -11,6 +11,7 @@
 #include "threads/switch.h"
 #include "threads/synch.h"
 #include "threads/vaddr.h"
+#include "threads/fixed-point.h"
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
@@ -50,6 +51,7 @@ static long long idle_ticks;    /**< # of timer ticks spent idle. */
 static long long kernel_ticks;  /**< # of timer ticks in kernel threads. */
 static long long user_ticks;    /**< # of timer ticks in user programs. */
 volatile static bool idle_initialized = false; /**< check idle is initialized */
+static int32_t load_avg = 0;
 /** Scheduling. */
 #define TIME_SLICE 4            /**< # of timer ticks to give each thread. */
 static unsigned thread_ticks;   /**< # of timer ticks since last yield. */
@@ -109,6 +111,7 @@ thread_start (void)
   /* Create the idle thread. */
   struct semaphore idle_started;
   sema_init (&idle_started, 0);
+  load_avg = 0;
   thread_create ("idle", PRI_MIN, idle, &idle_started);
 
   /* Start preemptive thread scheduling. */
@@ -342,20 +345,22 @@ thread_foreach (thread_action_func *func, void *aux)
 void
 thread_set_priority (int new_priority) 
 {
-  if(thread_current()->original_priority > 0 && thread_current()->priority != thread_current()->original_priority){
-    thread_current ()->original_priority = new_priority;
-  }else{
-    thread_current ()->priority = new_priority;
-  }
+  if(!thread_mlfqs){
+    if(thread_current()->original_priority > 0 && thread_current()->priority != thread_current()->original_priority){
+      thread_current ()->original_priority = new_priority;
+    }else{
+      thread_current ()->priority = new_priority;
+    }
 
-  enum intr_level old_level;
-  old_level = intr_disable();
-  struct list_elem *t = list_max(&ready_list , priority_less , NULL);
-  struct thread *t_ptr = list_entry(t,struct thread , elem);
-  if(t_ptr->priority > new_priority){
-    thread_yield();
+    enum intr_level old_level;
+    old_level = intr_disable();
+    struct list_elem *t = list_max(&ready_list , priority_less , NULL);
+    struct thread *t_ptr = list_entry(t,struct thread , elem);
+    if(t_ptr->priority > new_priority){
+      thread_yield();
+    }
+    intr_set_level(old_level);
   }
-  intr_set_level(old_level);
 }
 
 /** Returns the current thread's priority. */
@@ -370,6 +375,9 @@ void
 thread_set_nice (int nice UNUSED) 
 {
   /* Not yet implemented. */
+  ASSERT(nice <= 20);
+  ASSERT(nice >= -20);
+  thread_current()->nice = nice;
 }
 
 /** Returns the current thread's nice value. */
@@ -377,7 +385,7 @@ int
 thread_get_nice (void) 
 {
   /* Not yet implemented. */
-  return 0;
+  return thread_current()->nice;
 }
 
 /** Returns 100 times the system load average. */
@@ -385,7 +393,8 @@ int
 thread_get_load_avg (void) 
 {
   /* Not yet implemented. */
-  return 0;
+  // 注意load_avg为fixed_point 
+  return FIXED2INT(FIXED_MUL_INT(load_avg , 100));
 }
 
 /** Returns 100 times the current thread's recent_cpu value. */
@@ -393,7 +402,7 @@ int
 thread_get_recent_cpu (void) 
 {
   /* Not yet implemented. */
-  return 0;
+  return FIXED2INT(FIXED_MUL_INT(thread_current()->recent_cpu,100));
 }
 
 /** Idle thread.  Executes when no other thread is ready to run.
@@ -487,7 +496,8 @@ init_thread (struct thread *t, const char *name, int priority)
   t->wait_for = NULL;
   t->original_priority = -1;
   list_init(&t->donations);
-
+  t->nice = 0;
+  t->recent_cpu = 0;
 
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);
@@ -639,6 +649,48 @@ void donate_priority(struct thread *donee , struct thread *donor){
     thread_yield();
   }
   
+}
+
+void calc_load_avg(void){
+  // load_avg = 59/60 *load_avg + 1/60 * ready_threads
+  int32_t ready_threads = 0;
+  if(strcmp(thread_current()->name , "idle") != 0){
+    ready_threads = 1;
+  }
+  ready_threads += list_size(&ready_list);
+  int32_t co_efficient = FIXED_DIV(INT2FIXED(59),INT2FIXED(60));
+  load_avg = FIXED_ADD(FIXED_MUL(co_efficient , load_avg),FIXED_DIV_INT(INT2FIXED(ready_threads) , 60));
+
+  // load_avg仍然是一个fixed point
+}
+
+void calc_recent_cpu(struct thread*t , void *aux UNUSED){
+  if(t == idle_thread){
+    return;
+  }
+  int32_t delay = FIXED_DIV(FIXED_MUL_INT(load_avg,2),FIXED_ADD_INT(FIXED_MUL_INT(load_avg,2),1));
+  t->recent_cpu = FIXED_ADD_INT(FIXED_MUL(delay , t->recent_cpu) , t->nice);
+}
+
+void calc_priority(struct thread*t , void *aux UNUSED){
+  if(t == idle_thread){
+    return;
+  }
+  t->priority = FIXED2INT(FIXED_ADD_INT(FIXED_DIV_INT(t->recent_cpu,-4),PRI_MAX - 2*t->nice));
+}
+
+bool should_yield(void){
+  struct thread*t = list_entry(list_max(&ready_list , priority_less,NULL),struct thread , elem);
+  if(t->priority > thread_current()->priority){
+    return true;
+  }
+  return false;
+}
+void incr_cpu_recent(void){
+  if(thread_current() == idle_thread){
+    return;
+  }
+  FIXED_ADD_INT(thread_current()->recent_cpu , 1);
 }
 
 /** Offset of `stack' member within `struct thread'.

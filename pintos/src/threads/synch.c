@@ -212,38 +212,39 @@ lock_acquire (struct lock *lock)
   ASSERT (!intr_context ());
   ASSERT (!lock_held_by_current_thread (lock));
 
- 
-  // 对链表进行操作需要关闭中断~
-  enum intr_level old_value;
-  old_value = intr_disable();
-  // 添加当前线程正在等待lock锁
-  struct thread * cur_thread = thread_current();
-  struct thread * waitfor_thread = lock->holder;
-  cur_thread->wait_for = lock;
-  bool flag = false;
-  // 当前的锁已经被持有，并且请求acquire线程的优先级比持有锁的线程优先级高，donate...
-  while(waitfor_thread != NULL && waitfor_thread->priority < cur_thread->priority){
-    if(flag  == false){
-      struct list *donate_list = &waitfor_thread->donations;
-      // 如果当前donate_list为空，那么需要保存当前的priority , 以便之后恢复
-      if(list_empty(donate_list) == true){
-        waitfor_thread->original_priority = waitfor_thread->priority;
+  if(!thread_mlfqs){
+    // 对链表进行操作需要关闭中断~
+    enum intr_level old_value;
+    old_value = intr_disable();
+    // 添加当前线程正在等待lock锁
+    struct thread * cur_thread = thread_current();
+    struct thread * waitfor_thread = lock->holder;
+    cur_thread->wait_for = lock;
+    bool flag = false;
+    // 当前的锁已经被持有，并且请求acquire线程的优先级比持有锁的线程优先级高，donate...
+    while(waitfor_thread != NULL && waitfor_thread->priority < cur_thread->priority){
+      if(flag  == false){
+        struct list *donate_list = &waitfor_thread->donations;
+        // 如果当前donate_list为空，那么需要保存当前的priority , 以便之后恢复
+        if(list_empty(donate_list) == true){
+          waitfor_thread->original_priority = waitfor_thread->priority;
+        }
+        list_push_back(donate_list , &cur_thread->donor_elem);
+        donate_priority(waitfor_thread , cur_thread);
+        
+        flag = true;
+      }else{
+        waitfor_thread->priority = cur_thread->priority;
       }
-      list_push_back(donate_list , &cur_thread->donor_elem);
-      donate_priority(waitfor_thread , cur_thread);
-      
-      flag = true;
-    }else{
-      waitfor_thread->priority = cur_thread->priority;
+      if(waitfor_thread->wait_for != NULL){
+        waitfor_thread = waitfor_thread->wait_for->holder;
+      }else{
+        break;
+      }
     }
-    if(waitfor_thread->wait_for != NULL){
-      waitfor_thread = waitfor_thread->wait_for->holder;
-    }else{
-      break;
-    }
+    intr_set_level(old_value);
   }
-  
-  intr_set_level(old_value);
+
 
   sema_down (&lock->semaphore);
   thread_current()->wait_for = NULL;
@@ -280,30 +281,32 @@ lock_release (struct lock *lock)
 {
   ASSERT (lock != NULL);
   ASSERT (lock_held_by_current_thread (lock));
-
-  enum intr_level old_value = intr_disable();
-  struct list *donate_list = &lock->holder->donations;
-  struct list_elem *e;
-  for(e = list_begin(donate_list) ; e != list_end(donate_list) ;){
-    // 遍历donate_list 寻找正在wait for lock 的线程，找到了从中删除，最后更新当前线程的priority
-    struct thread *t = list_entry(e,struct thread , donor_elem );
-    if(t->wait_for == lock){
+  if(!thread_mlfqs){
+    enum intr_level old_value = intr_disable();
+    struct list *donate_list = &lock->holder->donations;
+    struct list_elem *e;
+    for(e = list_begin(donate_list) ; e != list_end(donate_list) ;){
+      // 遍历donate_list 寻找正在wait for lock 的线程，找到了从中删除，最后更新当前线程的priority
+      struct thread *t = list_entry(e,struct thread , donor_elem );
+      if(t->wait_for == lock){
+        e = list_next(e);
+        t->wait_for = NULL;
+        list_remove(e->prev);
+        continue;
+      }
+      if(list_end(donate_list) == e){
+        break;
+      }
       e = list_next(e);
-      t->wait_for = NULL;
-      list_remove(e->prev);
-      continue;
     }
-    if(list_end(donate_list) == e){
-      break;
+    if(list_empty(donate_list) && thread_current()->original_priority >= 0){
+      thread_current()->priority = thread_current()->original_priority;
+    }else if(!list_empty(donate_list)){
+      thread_current()->priority = list_entry(list_max(donate_list,priority_less_by_donorelem,NULL),struct thread,donor_elem)->priority;
     }
-    e = list_next(e);
+    intr_set_level(old_value);
   }
-  if(list_empty(donate_list) && thread_current()->original_priority >= 0){
-    thread_current()->priority = thread_current()->original_priority;
-  }else if(!list_empty(donate_list)){
-    thread_current()->priority = list_entry(list_max(donate_list,priority_less_by_donorelem,NULL),struct thread,donor_elem)->priority;
-  }
-  intr_set_level(old_value);
+
 
   lock->holder = NULL;
   sema_up (&lock->semaphore);

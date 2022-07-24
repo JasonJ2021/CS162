@@ -92,7 +92,9 @@ struct thread
     struct lock *wait_for;              /**< 记录这个线程正在等待的锁.*/
     struct list donations;              /**< 记录给这个线程的捐助者 .*/
     struct list_elem donor_elem;        /**< 放在donations中的元素 .*/
-    int original_priority;              /**< 记录没有被捐助之前的priority .*/
+    int32_t original_priority;              /**< 记录没有被捐助之前的priority .*/
+    int32_t nice;                           /**< 用于mlfqs 调度器策略 .*/
+    int32_t recent_cpu;                     /**< 用于mlfqs 调度器策略 .*/
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /**< List element. */
@@ -151,4 +153,9 @@ priority_less (const struct list_elem *a_, const struct list_elem *b_,
             void *aux UNUSED);
 
 void donate_priority(struct thread *donee , struct thread *donor);
+void calc_load_avg(void);
+void calc_recent_cpu(struct thread*t , void *aux UNUSED);
+void calc_priority(struct thread*t , void *aux UNUSED);
+bool should_yield(void);
+void incr_cpu_recent(void);
 #endif /**< threads/thread.h */
