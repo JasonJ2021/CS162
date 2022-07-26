@@ -1,0 +1,88 @@
+EXIT(3)                                              Linux Programmer's Manual                                             EXIT(3)
+
+NNAAMMEE
+       exit - cause normal process termination
+
+SSYYNNOOPPSSIISS
+       ##iinncclluuddee <<ssttddlliibb..hh>>
+
+       vvooiidd eexxiitt((iinntt _s_t_a_t_u_s));;
+
+DDEESSCCRRIIPPTTIIOONN
+       The eexxiitt() function causes normal process termination and the least significant byte of _s_t_a_t_u_s (i.e., _s_t_a_t_u_s _& _0_x_F_F) is re‐
+       turned to the parent (see wwaaiitt(2)).
+
+       All functions registered with aatteexxiitt(3) and oonn__eexxiitt(3) are called, in the reverse order of their registration.  (It is pos‐
+       sible  for  one  of these functions to use aatteexxiitt(3) or oonn__eexxiitt(3) to register an additional function to be executed during
+       exit processing; the new registration is added to the front of the list of functions that remain to be called.)  If one  of
+       these  functions does not return (e.g., it calls __eexxiitt(2), or kills itself with a signal), then none of the remaining func‐
+       tions is called, and further exit processing (in particular, flushing of ssttddiioo(3) streams) is abandoned.  If a function has
+       been registered multiple times using aatteexxiitt(3) or oonn__eexxiitt(3), then it is called as many times as it was registered.
+
+       All open ssttddiioo(3) streams are flushed and closed.  Files created by ttmmppffiillee(3) are removed.
+
+       The  C standard specifies two constants, EEXXIITT__SSUUCCCCEESSSS and EEXXIITT__FFAAIILLUURREE, that may be passed to eexxiitt() to indicate successful
+       or unsuccessful termination, respectively.
+
+RREETTUURRNN VVAALLUUEE
+       The eexxiitt() function does not return.
+
+AATTTTRRIIBBUUTTEESS
+       For an explanation of the terms used in this section, see aattttrriibbuutteess(7).
+
+       ┌──────────┬───────────────┬─────────────────────┐
+       │IInntteerrffaaccee │ AAttttrriibbuuttee     │ VVaalluuee               │
+       ├──────────┼───────────────┼─────────────────────┤
+       │eexxiitt()    │ Thread safety │ MT-Unsafe race:exit │
+       └──────────┴───────────────┴─────────────────────┘
+       The eexxiitt() function uses a global variable that is not protected, so it is not thread-safe.
+
+CCOONNFFOORRMMIINNGG TTOO
+       POSIX.1-2001, POSIX.1-2008, C89, C99, SVr4, 4.3BSD.
+
+NNOOTTEESS
+       The behavior is undefined if one of the functions  registered  using  aatteexxiitt(3)  and  oonn__eexxiitt(3)  calls  either  eexxiitt()  or
+       lloonnggjjmmpp(3).  Note that a call to eexxeeccvvee(2) removes registrations created using aatteexxiitt(3) and oonn__eexxiitt(3).
+
+       The  use  of  EEXXIITT__SSUUCCCCEESSSS and EEXXIITT__FFAAIILLUURREE is slightly more portable (to non-UNIX environments) than the use of 0 and some
+       nonzero value like 1 or -1.  In particular, VMS uses a different convention.
+
+       BSD has attempted to standardize exit codes (which some C libraries such as the GNU C library have also adopted);  see  the
+       file _<_s_y_s_e_x_i_t_s_._h_>.
+
+       After eexxiitt(), the exit status must be transmitted to the parent process.  There are three cases:
+
+       •  If  the  parent  has  set SSAA__NNOOCCLLDDWWAAIITT, or has set the SSIIGGCCHHLLDD handler to SSIIGG__IIGGNN, the status is discarded and the child
+          dies immediately.
+
+       •  If the parent was waiting on the child, it is notified of the exit status and the child dies immediately.
+
+       •  Otherwise, the child becomes a "zombie" process: most of the process resources are recycled, but a slot containing mini‐
+          mal  information  about  the child process (termination status, resource usage statistics) is retained in process table.
+          This allows the parent to subsequently use wwaaiittppiidd(2) (or similar) to learn the termination status of the child; at that
+          point the zombie process slot is released.
+
+       If  the implementation supports the SSIIGGCCHHLLDD signal, this signal is sent to the parent.  If the parent has set SSAA__NNOOCCLLDDWWAAIITT,
+       it is undefined whether a SSIIGGCCHHLLDD signal is sent.
+
+   SSiiggnnaallss sseenntt ttoo ootthheerr pprroocceesssseess
+       If the exiting process is a session leader and its controlling terminal is the controlling terminal of  the  session,  then
+       each process in the foreground process group of this controlling terminal is sent a SSIIGGHHUUPP signal, and the terminal is dis‐
+       associated from this session, allowing it to be acquired by a new controlling process.
+
+       If the exit of the process causes a process group to become orphaned, and if any member of the newly orphaned process group
+       is  stopped,  then  a  SSIIGGHHUUPP  signal followed by a SSIIGGCCOONNTT signal will be sent to each process in this process group.  See
+       sseettppggiidd(2) for an explanation of orphaned process groups.
+
+       Except in the above cases, where the signalled processes may be children of  the  terminating  process,  termination  of  a
+       process does _n_o_t in general cause a signal to be sent to children of that process.  However, a process can use the pprrccttll(2)
+       PPRR__SSEETT__PPDDEEAATTHHSSIIGG operation to arrange that it receives a signal if its parent terminates.
+
+SSEEEE AALLSSOO
+       __eexxiitt(2), ggeett__rroobbuusstt__lliisstt(2), sseettppggiidd(2), wwaaiitt(2), aatteexxiitt(3), oonn__eexxiitt(3), ttmmppffiillee(3)
+
+CCOOLLOOPPHHOONN
+       This page is part of release 5.10 of the Linux _m_a_n_-_p_a_g_e_s project.  A description of the project, information about  report‐
+       ing bugs, and the latest version of this page, can be found at https://www.kernel.org/doc/man-pages/.
+
+Linux                                                       2020-02-09                                                     EXIT(3)
