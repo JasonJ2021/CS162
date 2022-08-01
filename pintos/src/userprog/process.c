@@ -58,7 +58,7 @@ start_process (void *file_name_)
   struct intr_frame if_;
   bool success;
   char *token , *saved_ptr;
-  char **parse;
+  char *parse[16]; //最多支持16个参数
   int count = 0;
   // Parse the file_name 
   for(token = strtok_r(file_name , " " , &saved_ptr) ; token != NULL ; token = strtok_r(NULL , " " , &saved_ptr)){
@@ -487,10 +487,10 @@ static void init_user_stack(int argc , char**argv , void ** esp){
   int len_temp = 0;
   // 将字符串复制到用户栈上
   for(int i = 0 ; i < argc ; i++){
-    len_temp = strlen(argv[i]);
+    len_temp = strlen(argv[argc - 1 - i]) + 1;
     esp_ptr -= len_temp;
     size += len_temp;
-    strlcpy(esp_ptr , argv[i] ,len_temp);
+    strlcpy(esp_ptr , argv[argc - 1 - i] ,len_temp);
     stack_ptrs[i] = esp_ptr;
   }
   if(size % 4){
@@ -500,10 +500,10 @@ static void init_user_stack(int argc , char**argv , void ** esp){
   memset(esp_ptr , 0 , 4);
   for(int i = 0 ; i < argc ; i++){
     esp_ptr -=4;
-    *(char **)esp_ptr = stack_ptrs[argc - 1 - i];
+    *(char **)esp_ptr = stack_ptrs[i];
   }
   esp_ptr -=4;
-  *(char ***)esp_ptr = &stack_ptrs[argc - 1];
+  *(char ***)esp_ptr = (char**)(esp_ptr +4);
   esp_ptr -=4;
   *(int*)esp_ptr = argc;
   esp_ptr -=4;
