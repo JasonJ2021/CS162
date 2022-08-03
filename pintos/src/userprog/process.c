@@ -18,6 +18,7 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 #include "threads/synch.h"
+#include "threads/malloc.h"
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
@@ -58,7 +59,7 @@ start_process (void *file_name_)
   struct intr_frame if_;
   bool success;
   char *token , *saved_ptr;
-  char *parse[16]; //最多支持16个参数
+  char *parse[32]; //最多支持16个参数
   int count = 0;
   // Parse the file_name 
   for(token = strtok_r(file_name , " " , &saved_ptr) ; token != NULL ; token = strtok_r(NULL , " " , &saved_ptr)){
@@ -71,7 +72,7 @@ start_process (void *file_name_)
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load (parse[0], &if_.eip, &if_.esp);
   init_user_stack(count , parse , &if_.esp);
-  hex_dump(if_.esp , if_.esp , PHYS_BASE - if_.esp , true);
+  // hex_dump(if_.esp , if_.esp , PHYS_BASE - if_.esp , true);
   /* If load failed, quit. */
   palloc_free_page (file_name);
   if (!success) 
@@ -99,10 +100,33 @@ start_process (void *file_name_)
 int
 process_wait (tid_t child_tid UNUSED) 
 {
-  struct semaphore s;
-  sema_init(&s , 0);
-  sema_down(&s);
-  return -1;
+  struct thread *cur_t = thread_current();
+  enum intr_level old_level = intr_disable();
+  struct exec_info * exec_info_ = NULL;
+  struct list_elem *e;
+  for(e = list_begin(&cur_t->children); e != list_end(&cur_t->children) ; e=list_next(e)){
+    struct exec_info *temp_exec = list_entry(e,struct exec_info , elem);
+    if(temp_exec->tid == child_tid){
+      exec_info_ = temp_exec;
+      break;
+    }
+  }
+  intr_set_level(old_level);
+  if(exec_info_ != NULL){
+    sema_down(&exec_info_->sema);
+    list_remove(e);
+    int exit_status_return = 0 ;
+    if(exec_info_->killed_by_exit){
+      exit_status_return = exec_info_->exit_status;
+    }else{
+      exit_status_return = -1;
+    }
+    // 父进程需要释放资源
+    free(exec_info_);
+    return exit_status_return;
+  }else{
+    return -1;
+  }
 }
 
 /** Free the current process's resources. */

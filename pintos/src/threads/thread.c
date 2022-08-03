@@ -12,6 +12,8 @@
 #include "threads/synch.h"
 #include "threads/vaddr.h"
 #include "threads/fixed-point.h"
+#include "threads/malloc.h"
+#include "userprog/syscall.h"
 #ifdef USERPROG
 #include "userprog/process.h"
 #endif
@@ -186,6 +188,7 @@ thread_create (const char *name, int priority,
   /* Initialize thread. */
   init_thread (t, name, priority);
   tid = t->tid = allocate_tid ();
+  t->exec_info_->tid = tid;
 
   /* Stack frame for kernel_thread(). */
   kf = alloc_frame (t, sizeof *kf);
@@ -304,6 +307,11 @@ thread_exit (void)
      when it calls thread_schedule_tail(). */
   intr_disable ();
   list_remove (&thread_current()->allelem);
+  if(!thread_current()->info_released){
+    // 这里说明不是通过exit释放的内存
+    sema_up(&thread_current()->exec_info_->sema);
+  }
+  close_all();
   thread_current ()->status = THREAD_DYING;
   schedule ();
   NOT_REACHED ();
@@ -503,6 +511,18 @@ init_thread (struct thread *t, const char *name, int priority)
   list_init(&t->donations);
   t->nice = 0;
   t->recent_cpu = 0;
+  t->next_fd = 2; // 下一个fd为2
+  // 这里准备exec information
+  list_init(&t->children);
+  if(strcmp(name , "main") != 0){
+    t->exec_info_ = (struct exec_info *)malloc(sizeof(struct exec_info));
+    sema_init(&t->exec_info_->sema , 0);
+    t->exec_info_->killed_by_exit = false;
+    t->exec_info_->parent_proc_alive = true;
+    list_push_back(&thread_current()->children , &t->exec_info_->elem);
+    t->info_released = false;
+  }
+  
 
   old_level = intr_disable ();
   list_push_back (&all_list, &t->allelem);

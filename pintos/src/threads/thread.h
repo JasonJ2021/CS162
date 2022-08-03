@@ -4,6 +4,8 @@
 #include <debug.h>
 #include <list.h>
 #include <stdint.h>
+#include "filesys/file.h"
+#include "threads/synch.h"
 
 /** States in a thread's life cycle. */
 enum thread_status
@@ -13,7 +15,15 @@ enum thread_status
     THREAD_BLOCKED,     /**< Waiting for an event to trigger. */
     THREAD_DYING        /**< About to be destroyed. */
   };
-
+struct exec_info
+{
+   struct list_elem elem; // children_listelem
+   int exit_status; // 退出的状态
+   struct semaphore sema; // 用于和父进程通信
+   bool killed_by_exit; // 标志是否是通过exit被Killed
+   bool parent_proc_alive; // 父进程是否还alive
+   int tid;
+};
 /** Thread identifier type.
    You can redefine this to whatever type you like. */
 typedef int tid_t;
@@ -23,6 +33,9 @@ typedef int tid_t;
 #define PRI_MIN 0                       /**< Lowest priority. */
 #define PRI_DEFAULT 31                  /**< Default priority. */
 #define PRI_MAX 63                      /**< Highest priority. */
+
+/** File Descriptor.*/
+#define FDT_SIZE 64
 
 /** A kernel thread or user process.
 
@@ -95,9 +108,17 @@ struct thread
     int32_t original_priority;              /**< 记录没有被捐助之前的priority .*/
     int32_t nice;                           /**< 用于mlfqs 调度器策略 .*/
     int32_t recent_cpu;                     /**< 用于mlfqs 调度器策略 .*/
+    int32_t exit_status;                /**< 用于exit 状态记录      .*/
+    struct file *fdt[FDT_SIZE];                /**< 进程拥有的文件描述符 .*/
+    int next_fd;                        /**< 下一个被分配的文件描述符 .*/
+    /* ===================Execution Information=============================. */
+    struct list children;
+    struct exec_info *exec_info_;
+    bool info_released;
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /**< List element. */
+    
 
 #ifdef USERPROG
     /* Owned by userprog/process.c. */
