@@ -11,6 +11,8 @@
 #include "threads/synch.h"
 #include "threads/malloc.h"
 #include "devices/input.h"
+#include "userprog/process.h"
+#include "lib/string.h"
 
 // 系统调用函数
 static void syscall_handler (struct intr_frame *);
@@ -24,7 +26,9 @@ static int read (int fd, void *buffer, unsigned size);
 static int filesize (int fd);
 static bool remove (const char *file);
 static void seek (int fd, unsigned position);
-
+static unsigned tell (int fd);
+static int wait (int pid);
+static int exec (const char *cmd_line);
 
 // 控制关联文件的系统调用同时只能有一个线程访问
 static struct lock file_lock; 
@@ -166,6 +170,9 @@ syscall_handler (struct intr_frame *f UNUSED)
         exit(-1);
       }
       const char* file = (char *)(*((int *)f->esp + 1));
+      if(!validate_user_ptr(file)){
+        exit(-1);
+      }
       bool ans = remove(file);
       f->eax = ans;
       break;
@@ -182,6 +189,39 @@ syscall_handler (struct intr_frame *f UNUSED)
       int fd = *((int *)f->esp + 1);
       unsigned position = *((unsigned *)f->esp + 2);
       seek(fd,position);
+      break;
+    }
+    case SYS_TELL:
+    {
+      // unsigned tell (int fd)
+      if(!validate_user_ptr((int *)f->esp + 1)){
+          exit(-1);
+      }
+      int fd = *((int *)f->esp + 1);
+      f->eax = tell(fd);
+      break;
+    }
+    case SYS_WAIT:
+    {
+      // int wait (pid_t pid)
+      if(!validate_user_ptr((int *)f->esp + 1)){
+          exit(-1);
+      }
+      int pid = *((int *)f->esp + 1);
+      f->eax = wait(pid);
+      break;
+    }
+    case SYS_EXEC:
+    {
+      // pid_t exec (const char *cmd_line)
+      if(!validate_user_ptr((unsigned *)f->esp + 1)){
+        exit(-1);
+      }
+      const char* cmd_line = (char *)(*((int *)f->esp + 1));
+      if(!validate_user_ptr(cmd_line)){
+        exit(-1);
+      }
+      f->eax = exec(cmd_line);
       break;
     }
     default:
@@ -370,4 +410,68 @@ static void seek (int fd, unsigned position){
   lock_acquire(&file_lock);
   file_seek(thread_current()->fdt[fd] , position);
   lock_release(&file_lock);
+}
+
+static unsigned tell (int fd){
+  if(fd < 2 || fd >= 64){
+    return 0;
+  }
+  if(thread_current()->fdt[fd] == NULL){
+    return 0;
+  }
+  lock_acquire(&file_lock);
+  unsigned ans = file_tell(thread_current()->fdt[fd]);
+  lock_release(&file_lock);
+  return ans;
+}
+
+static int wait (int pid){
+  struct thread *cur_t = thread_current();
+  enum intr_level old_level = intr_disable();
+  struct exec_info * exec_info_ = NULL;
+  struct list_elem *e;
+  for(e = list_begin(&cur_t->children); e != list_end(&cur_t->children) ; e=list_next(e)){
+    struct exec_info *temp_exec = list_entry(e,struct exec_info , elem);
+    if(temp_exec->tid == pid){
+      exec_info_ = temp_exec;
+      break;
+    }
+  }
+  intr_set_level(old_level);
+  if(exec_info_ != NULL){
+    sema_down(&exec_info_->sema);
+    list_remove(e); // 这边中断关闭有风险
+    int exit_status_return = -1;
+    if(exec_info_->killed_by_exit){
+      exit_status_return = exec_info_->exit_status;
+    }else{
+      exit_status_return = -1;
+    }
+    // 父进程需要释放资源
+    free(exec_info_);
+    return exit_status_return;
+  }else{
+    return -1;
+  }
+}
+
+static int exec (const char *cmd_line){
+  char *command_line = (char *)malloc(strlen(cmd_line) + 1);
+  strlcpy(command_line , cmd_line,strlen(cmd_line) + 1);
+  int pid = process_execute(command_line);
+  free(command_line);
+  struct list_elem *e;
+  struct thread*t = thread_current();
+  struct exec_info *exec_info_;
+  for(e = list_begin(&t->children) ; e != list_end(&t->children) ; e = list_next(e)){
+    exec_info_ = list_entry(e,struct exec_info , elem);
+    if(exec_info_->tid == pid){
+      break;
+    }
+  }
+  sema_down(&exec_info_->load_sema);
+  if(!exec_info_->load_success){
+    pid = -1;
+  }
+  return pid;
 }

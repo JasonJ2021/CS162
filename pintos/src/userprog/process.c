@@ -42,7 +42,7 @@ process_execute (const char *file_name)
   strlcpy (fn_copy, file_name, PGSIZE);
   // 原本filename = echo "1" 这里需要把file_name修改为文件名
   char *pure_filename , *save_ptr;
-  pure_filename = strtok_r(file_name," " , &save_ptr);
+  pure_filename = strtok_r(file_name, " " , &save_ptr);
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (pure_filename, PRI_DEFAULT, start_process, fn_copy);
   if (tid == TID_ERROR)
@@ -71,6 +71,8 @@ start_process (void *file_name_)
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
   success = load (parse[0], &if_.eip, &if_.esp);
+  thread_current()->exec_info_->load_success = success;
+  sema_up(&thread_current()->exec_info_->load_sema);
   init_user_stack(count , parse , &if_.esp);
   // hex_dump(if_.esp , if_.esp , PHYS_BASE - if_.esp , true);
   /* If load failed, quit. */

@@ -22,7 +22,9 @@ struct exec_info
    struct semaphore sema; // 用于和父进程通信
    bool killed_by_exit; // 标志是否是通过exit被Killed
    bool parent_proc_alive; // 父进程是否还alive
+   struct semaphore load_sema; // 用于load的通信
    int tid;
+   bool load_success;
 };
 /** Thread identifier type.
    You can redefine this to whatever type you like. */

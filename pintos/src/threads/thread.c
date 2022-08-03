@@ -516,11 +516,14 @@ init_thread (struct thread *t, const char *name, int priority)
   list_init(&t->children);
   if(strcmp(name , "main") != 0){
     t->exec_info_ = (struct exec_info *)malloc(sizeof(struct exec_info));
+    t->exec_info_->exit_status = 0;
     sema_init(&t->exec_info_->sema , 0);
+    sema_init(&t->exec_info_->load_sema , 0);
     t->exec_info_->killed_by_exit = false;
     t->exec_info_->parent_proc_alive = true;
     list_push_back(&thread_current()->children , &t->exec_info_->elem);
     t->info_released = false;
+    t->exec_info_->load_success = false;
   }
   
 
