@@ -25,6 +25,7 @@ struct exec_info
    struct semaphore load_sema; // 用于load的通信
    int tid;
    bool load_success;
+   bool exited;
 };
 /** Thread identifier type.
    You can redefine this to whatever type you like. */
@@ -37,7 +38,7 @@ typedef int tid_t;
 #define PRI_MAX 63                      /**< Highest priority. */
 
 /** File Descriptor.*/
-#define FDT_SIZE 64
+#define FDT_SIZE 128
 
 /** A kernel thread or user process.
 
@@ -117,6 +118,7 @@ struct thread
     struct list children;
     struct exec_info *exec_info_;
     bool info_released;
+    struct file* file_executing;
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /**< List element. */

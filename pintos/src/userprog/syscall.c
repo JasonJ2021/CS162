@@ -239,11 +239,16 @@ void exit(int status){
   struct thread *t = thread_current();
   t->exec_info_->exit_status = status;
   t->exec_info_->killed_by_exit = true;
+  t->exec_info_->exited = true;
   struct list_elem *e;
   enum intr_level old_level = intr_disable();
-  for(e = list_begin(&t->children) ; e != list_end(&t->children) ; e = list_next(e)){
+  for(e = list_begin(&t->children) ; e != list_end(&t->children) ; ){
     struct exec_info *exec_info_ = list_entry(e , struct exec_info , elem);
     exec_info_->parent_proc_alive = false;
+    e = list_next(e);
+    if(exec_info_->exited){
+      free(exec_info_);
+    }
   }
   intr_set_level(old_level);
   // 通知父进程自己退出
@@ -271,7 +276,7 @@ static int write(int fd, const void *buffer, unsigned size){
   // lock_release(&file_lock);
   // return size;
   // 这里需要上锁！
-  if(fd <= 0 || fd >= 64){
+  if(fd <= 0 || fd >= FDT_SIZE){
     return 0;
   }
   lock_acquire(&file_lock);
@@ -324,7 +329,7 @@ static int open (const char *file){
 }
 
 static void close (int fd){
-  if(fd >=64 || fd <=2){
+  if(fd >=FDT_SIZE || fd <=2){
     return;
   }
   lock_acquire(&file_lock);
@@ -350,7 +355,7 @@ void close_all(void){
 
 static int read (int fd, void *buffer, unsigned size){
   // 这里需要上锁！
-  if(fd < 0 || fd >= 64 || fd == 1){
+  if(fd < 0 || fd >= FDT_SIZE || fd == 1){
     return 0;
   }
   lock_acquire(&file_lock);
@@ -381,7 +386,7 @@ static int read (int fd, void *buffer, unsigned size){
 
 static int filesize (int fd){
   int size = 0 ;
-  if(fd <2 || fd >=64){
+  if(fd <2 || fd >=FDT_SIZE){
     return 0;
   }
   if(thread_current()->fdt[fd] == NULL){
@@ -401,7 +406,7 @@ static bool remove (const char *file){
 }
 
 static void seek (int fd, unsigned position){
-  if(fd < 2 || fd >=64){
+  if(fd < 2 || fd >=FDT_SIZE){
     return;
   }
   if(thread_current()->fdt[fd] == NULL){
@@ -413,7 +418,7 @@ static void seek (int fd, unsigned position){
 }
 
 static unsigned tell (int fd){
-  if(fd < 2 || fd >= 64){
+  if(fd < 2 || fd >= FDT_SIZE){
     return 0;
   }
   if(thread_current()->fdt[fd] == NULL){
@@ -468,6 +473,9 @@ static int exec (const char *cmd_line){
     if(exec_info_->tid == pid){
       break;
     }
+  }
+  if(pid == -1){
+    return -1;
   }
   sema_down(&exec_info_->load_sema);
   if(!exec_info_->load_success){
