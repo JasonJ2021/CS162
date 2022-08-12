@@ -119,7 +119,7 @@ inode_open (block_sector_t sector)
        e = list_next (e)) 
     {
       inode = list_entry (e, struct inode, elem);
-      if (inode->sector == sector) 
+      if (inode->sector == sector && inode->data.magic == INODE_MAGIC ) 
         {
           inode_reopen (inode);
           return inode; 

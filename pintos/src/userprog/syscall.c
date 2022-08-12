@@ -329,7 +329,7 @@ static int open (const char *file){
 }
 
 static void close (int fd){
-  if(fd >=FDT_SIZE || fd <=2){
+  if(fd >=FDT_SIZE || fd < 2){
     return;
   }
   lock_acquire(&file_lock);
@@ -357,6 +357,9 @@ static int read (int fd, void *buffer, unsigned size){
   // 这里需要上锁！
   if(fd < 0 || fd >= FDT_SIZE || fd == 1){
     return 0;
+  }
+  if(!pagedir_is_writable(thread_current()->pagedir , buffer)){
+    exit(-1);
   }
   lock_acquire(&file_lock);
   int readin_size = 0;
@@ -461,7 +464,7 @@ static int wait (int pid){
 }
 
 static int exec (const char *cmd_line){
-  char *command_line = (char *)malloc(strlen(cmd_line) + 1);
+  char *command_line = (char *)malloc(strlen(cmd_line) + 1); // 这里有bug ，我复制了一份cmdline才通过
   strlcpy(command_line , cmd_line,strlen(cmd_line) + 1);
   int pid = process_execute(command_line);
   free(command_line);

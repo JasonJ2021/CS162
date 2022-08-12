@@ -6,6 +6,7 @@
 #include <stdint.h>
 #include "filesys/file.h"
 #include "threads/synch.h"
+#include <hash.h>
 
 /** States in a thread's life cycle. */
 enum thread_status
@@ -119,6 +120,10 @@ struct thread
     struct exec_info *exec_info_;
     bool info_released;
     struct file* file_executing;
+    /* ===================Project3 VM Part==================================. */
+    struct hash vm; // 存放vm_entry的hash table
+
+
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /**< List element. */

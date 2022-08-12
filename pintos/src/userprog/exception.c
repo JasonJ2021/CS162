@@ -5,12 +5,16 @@
 #include "threads/interrupt.h"
 #include "threads/thread.h"
 #include "userprog/syscall.h"
+#include "threads/vaddr.h"
+#include "userprog/process.h"
+#include "vm/page.h"
 
 /** Number of page faults processed. */
 static long long page_fault_cnt;
 
 static void kill (struct intr_frame *);
 static void page_fault (struct intr_frame *);
+static bool validate_addr(void *addr , struct intr_frame *f);
 
 /** Registers handlers for interrupts that can be caused by user
    programs.
@@ -148,15 +152,60 @@ page_fault (struct intr_frame *f)
   not_present = (f->error_code & PF_P) == 0;
   write = (f->error_code & PF_W) != 0;
   user = (f->error_code & PF_U) != 0;
+
+  #ifdef VM
+   bool flag = false;
+   if(not_present && validate_addr(fault_addr , f)){
+      // 缺页错误
+      void *pg_down_addr = pg_round_down(fault_addr);
+      if((uint32_t)f->esp - (uint32_t)fault_addr <= 32 && (uint32_t)f->esp - (uint32_t)fault_addr >0){
+         // 这种是需要给stack空间扩容的情况
+         struct vm_entry *entry = (struct vm_entry *)malloc(sizeof(struct vm_entry));
+         entry->data_aside = PGSIZE;
+         entry->in_memory = true;
+         entry->page_type = SWAP_AREA;
+         entry->writable = true;
+         entry->pg_number = pg_no(pg_down_addr);
+         entry->is_stack = true;
+         flag = handle_vm_fault(entry);
+      }else{
+         struct vm_entry *entry = find_vme(&thread_current()->vm , pg_down_addr);
+         if(entry != NULL){
+            flag = handle_vm_fault(entry);
+         }
+      }
+   }
+   if(flag)return;
+  #endif
+  // 除了"正确的"缺页错误以外的错误都需要退出杀死进程
   exit(-1);
   /* To implement virtual memory, delete the rest of the function
-     body, and replace it with code that brings in the page to
-     which fault_addr refers. */
+      body, and replace it with code that brings in the page to
+      which fault_addr refers. */
   printf ("Page fault at %p: %s error %s page in %s context.\n",
-          fault_addr,
-          not_present ? "not present" : "rights violation",
-          write ? "writing" : "reading",
-          user ? "user" : "kernel");
+         fault_addr,
+         not_present ? "not present" : "rights violation",
+         write ? "writing" : "reading",
+         user ? "user" : "kernel");
   kill (f);
+  
+  
+}
+
+static bool validate_addr(void *addr , struct intr_frame *f)
+{ 
+   /* 查看addr是否合法，合法返回true , 非法返回false
+      非法有以下4种情况
+    * 1. NULL POINTER e.g. addr == NULL
+    * 2. try to access kernel address e.g.addr >= PHY_BASE
+    * 3. try to access address under user stack e.g. addr < 0x08048000
+    * 4. doesn't seem to be a stack access e.g. esp - addr >= 32 ,
+    *  这种情况在缺页错误的时候判断
+    * .*/
+   if(addr == NULL)return false;
+   if(addr >= PHYS_BASE)return false;
+   if(addr < 0x08048000)return false;
+   // if(f->esp - addr >= 32)return false;
+   return true;
 }
 

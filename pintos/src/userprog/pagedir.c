@@ -152,7 +152,8 @@ pagedir_clear_page (uint32_t *pd, void *upage)
   if (pte != NULL && (*pte & PTE_P) != 0)
     {
       *pte &= ~PTE_P;
-      invalidate_pagedir (pd);
+      // upage移除页表之后TLB可能仍然存在upage的映射，通过invalidate_pagedir可以清除这些映射
+      invalidate_pagedir (pd); 
     }
 }
 
@@ -260,4 +261,11 @@ invalidate_pagedir (uint32_t *pd)
          "Translation Lookaside Buffers (TLBs)". */
       pagedir_activate (pd);
     } 
+}
+
+bool
+pagedir_is_writable (uint32_t *pd, const void *vpage) 
+{
+  uint32_t *pte = lookup_page (pd, vpage, false);
+  return pte != NULL && (*pte & PTE_W) != 0;
 }
