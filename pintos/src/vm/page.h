@@ -3,11 +3,13 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <hash.h>
-
+#include "vm/frame.h"
+#include "devices/block.h"
 enum vm_type{
   ELF_EXEC,
   GEN_FILE,  
-  SWAP_AREA
+  SWAP_AREA,
+  STACK
 };
 struct vm_entry{
     uintptr_t pg_number; // Virtual Page number: pd_no : pt_no , get from pg_no(*va)
@@ -17,9 +19,9 @@ struct vm_entry{
     enum vm_type page_type; // 记录当前page的种类，elf执行文件/文件/对应交换区
     int32_t data_aside;  // 在page中数据的大小, 读取100bytes 页中其他的字节要清零
     // swap area part2 中完成
-    bool in_memory;      // 是否在memory中
     struct hash_elem elem; // hash elem
-    bool is_stack;
+    struct frame *frame_; // 对应的物理页
+    block_sector_t block_index; // 物理页在swap中的back对应扇区的开始位置
 };
 
 void vm_init(struct hash *h);

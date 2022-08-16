@@ -154,28 +154,25 @@ page_fault (struct intr_frame *f)
   user = (f->error_code & PF_U) != 0;
 
   #ifdef VM
-   bool flag = false;
-   if(not_present && validate_addr(fault_addr , f)){
-      // 缺页错误
-      void *pg_down_addr = pg_round_down(fault_addr);
-      if((uint32_t)f->esp - (uint32_t)fault_addr <= 32 && (uint32_t)f->esp - (uint32_t)fault_addr >0){
-         // 这种是需要给stack空间扩容的情况
-         struct vm_entry *entry = (struct vm_entry *)malloc(sizeof(struct vm_entry));
-         entry->data_aside = PGSIZE;
-         entry->in_memory = true;
-         entry->page_type = SWAP_AREA;
-         entry->writable = true;
-         entry->pg_number = pg_no(pg_down_addr);
-         entry->is_stack = true;
-         flag = handle_vm_fault(entry);
-      }else{
-         struct vm_entry *entry = find_vme(&thread_current()->vm , pg_down_addr);
-         if(entry != NULL){
-            flag = handle_vm_fault(entry);
-         }
-      }
-   }
-   if(flag)return;
+  bool flag = false;
+  if(not_present && validate_addr(fault_addr , f)){
+		// 缺页错误
+		void *pg_down_addr = pg_round_down(fault_addr);
+		struct vm_entry *entry = find_vme(&thread_current()->vm , pg_down_addr);
+		if(entry != NULL){
+				flag = handle_vm_fault(entry);
+		}else if(f->esp - fault_addr <=32 && fault_addr >= PHYS_BASE - 0x400000){
+				// 这种是需要给stack空间扩容的情况
+				entry = (struct vm_entry *)malloc(sizeof(struct vm_entry));
+				entry->data_aside = PGSIZE;
+				entry->page_type = STACK;
+				entry->writable = true;
+				entry->pg_number = pg_no(pg_down_addr);
+				insert_vme(&thread_current()->vm , entry);
+				flag = handle_vm_fault(entry);
+		}
+  }
+  if(flag)return;
   #endif
   // 除了"正确的"缺页错误以外的错误都需要退出杀死进程
   exit(-1);

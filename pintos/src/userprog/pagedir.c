@@ -5,6 +5,8 @@
 #include "threads/init.h"
 #include "threads/pte.h"
 #include "threads/palloc.h"
+#include "vm/frame.h"
+#include "vm/page.h"
 
 static uint32_t *active_pd (void);
 static void invalidate_pagedir (uint32_t *);
@@ -40,8 +42,16 @@ pagedir_destroy (uint32_t *pd)
         uint32_t *pte;
         
         for (pte = pt; pte < pt + PGSIZE / sizeof *pte; pte++)
-          if (*pte & PTE_P) 
-            palloc_free_page (pte_get_page (*pte));
+          if (*pte & PTE_P){ 
+            void *vaddr = (pde - pd)<<PDSHIFT;
+            vaddr += (pte - pt)<<PTSHIFT;
+            struct vm_entry *entry = find_vme(&thread_current()->vm , vaddr);
+            if(entry->frame_ != NULL){
+              frame_free(entry);
+            }else{
+              palloc_free_page (pte_get_page (*pte));
+            }
+          }
         palloc_free_page (pt);
       }
   palloc_free_page (pd);

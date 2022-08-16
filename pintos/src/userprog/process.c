@@ -20,6 +20,8 @@
 #include "threads/synch.h"
 #include "threads/malloc.h"
 #include "vm/page.h"
+#include "vm/frame.h"
+#include "vm/swap.h"
 
 static thread_func start_process NO_RETURN;
 static bool load (const char *cmdline, void (**eip) (void), void **esp);
@@ -497,16 +499,24 @@ setup_stack (void **esp)
 {
   uint8_t *kpage;
   bool success = false;
-
-  kpage = palloc_get_page (PAL_USER | PAL_ZERO);
+  struct vm_entry *entry = (struct vm_entry *)malloc(sizeof(struct vm_entry));
+  entry->data_aside = PGSIZE;
+  entry->page_type = STACK;
+  entry->writable = true;
+  entry->pg_number = pg_no(PHYS_BASE - PGSIZE);
+  insert_vme(&thread_current()->vm , entry);
+  kpage = frame_alloc(entry);
   if (kpage != NULL) 
     {
       success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
       if (success)
         *esp = PHYS_BASE;
       else
-        palloc_free_page (kpage);
+        frame_free(entry);
     }
+  if(success){
+    memset(kpage , 0 , PGSIZE);
+  }
   #ifdef VM
     if(success){
       // 1.创建vm_entry 2.设置vm_entry fields 3.把vm_entry添加到hashtable中
@@ -517,7 +527,6 @@ setup_stack (void **esp)
       entry->file = NULL;
       entry->offset = 0;
       entry->data_aside = PGSIZE;
-      entry->in_memory = true;
       insert_vme(&thread_current()->vm , entry);
     }
   #endif
@@ -583,14 +592,14 @@ bool handle_vm_fault(struct vm_entry *entry){
   if(entry->page_type == ELF_EXEC){
     // 处理ELF文件的加载
     /* Get a page of memory. */
-    uint8_t *kpage = palloc_get_page (PAL_USER);
+    uint8_t *kpage = frame_alloc(entry);
     if (kpage == NULL)
       return false;
 
     /* Load this page. */
     if (file_read_at (entry->file, kpage, entry->data_aside , entry->offset) != (int) entry->data_aside)
       {
-        palloc_free_page (kpage);
+        frame_free(entry);
         return false; 
       }
     memset (kpage + entry->data_aside, 0, PGSIZE - entry->data_aside);
@@ -598,22 +607,31 @@ bool handle_vm_fault(struct vm_entry *entry){
     /* Add the page to the process's address space. */
     if (!install_page ((uintptr_t)entry->pg_number << PGBITS, kpage, entry->writable)) 
       {
-        palloc_free_page (kpage);
+        frame_free(entry);
         return false; 
       }
-    entry->page_type = SWAP_AREA;
-  }else if(entry->is_stack){
-    uint8_t *kpage = palloc_get_page (PAL_USER);
+  }else if(entry->page_type == STACK){
+    uint8_t *kpage = frame_alloc(entry);
     if (kpage == NULL)
       return false;
     /* Add the page to the process's address space. */
     if (!install_page ((uintptr_t)entry->pg_number << PGBITS, kpage, entry->writable)) 
       {
-        palloc_free_page (kpage);
+        frame_free(entry);
         return false; 
       }
     memset(kpage , 0 , PGSIZE);
-    entry->is_stack = false;
+  }else if(entry->page_type == SWAP_AREA){
+    uint8_t *kpage = frame_alloc(entry);
+    if (kpage == NULL)
+      return false;
+    read_from_block(kpage,entry->block_index);
+    /* Add the page to the process's address space. */
+    if (!install_page ((uintptr_t)entry->pg_number << PGBITS, kpage, entry->writable)) 
+      {
+        frame_free(entry);
+        return false; 
+      }
   }
 
   return true;
