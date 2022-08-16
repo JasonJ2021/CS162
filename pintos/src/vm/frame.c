@@ -19,6 +19,7 @@ void frame_list_init()
 uint8_t *frame_alloc(struct vm_entry *entry)
 {
 	// 分配并设置frame
+	ASSERT(entry->frame_ == NULL);
 	struct frame *frame_ = (struct frame *)malloc(sizeof(struct frame));
 	frame_->entry = entry;
 	frame_->owner_thread = thread_current();
@@ -59,6 +60,7 @@ void *frame_free(struct vm_entry *entry)
  */
 uint8_t *evict_frame(struct vm_entry *entry)
 {
+	ASSERT(entry->frame_ == NULL);
 	struct list_elem *ptr;
 	struct frame *frame_;
 	uint32_t *pd;
@@ -87,7 +89,10 @@ uint8_t *evict_frame(struct vm_entry *entry)
 		upage = frame_->entry->pg_number << PGBITS;
 		list_remove(list_begin(&frame_list));
 	}
+	pagedir_clear_page(pd,upage);
+	entry->frame_ = frame_;
 	lock_release(&frame_lock);
+
 	// 到现在找到了要驱逐的frame，并且把它移出了frame_list
 	if (frame_->entry->page_type == ELF_EXEC)
 	{
@@ -114,7 +119,6 @@ uint8_t *evict_frame(struct vm_entry *entry)
 	}
 	// 设置相应页表和frame，并且把frame加到List中
 	frame_->entry->frame_ = NULL;
-	pagedir_clear_page(pd,upage);
 	frame_->entry = entry;
 	frame_->owner_thread = thread_current();
 	lock_acquire(&frame_lock);

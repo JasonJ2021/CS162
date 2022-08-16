@@ -168,6 +168,7 @@ page_fault (struct intr_frame *f)
 				entry->page_type = STACK;
 				entry->writable = true;
 				entry->pg_number = pg_no(pg_down_addr);
+            entry->frame_ = NULL;
 				insert_vme(&thread_current()->vm , entry);
 				flag = handle_vm_fault(entry);
 		}

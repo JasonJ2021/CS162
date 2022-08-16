@@ -458,6 +458,7 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
         entry->file = file;
         entry->offset = ofs;
         entry->data_aside = page_read_bytes;
+        entry->frame_ = NULL;
         // 添加vm_entry到vm hashtable中
         insert_vme(&thread_current()->vm , entry);
         ofs+=page_read_bytes;
@@ -499,37 +500,39 @@ setup_stack (void **esp)
 {
   uint8_t *kpage;
   bool success = false;
-  struct vm_entry *entry = (struct vm_entry *)malloc(sizeof(struct vm_entry));
-  entry->data_aside = PGSIZE;
-  entry->page_type = STACK;
-  entry->writable = true;
-  entry->pg_number = pg_no(PHYS_BASE - PGSIZE);
-  insert_vme(&thread_current()->vm , entry);
-  kpage = frame_alloc(entry);
-  if (kpage != NULL) 
+  #ifdef VM
+    struct vm_entry *entry = (struct vm_entry *)malloc(sizeof(struct vm_entry));
+    entry->data_aside = PGSIZE;
+    entry->page_type = STACK;
+    entry->writable = true;
+    entry->pg_number = pg_no(PHYS_BASE - PGSIZE);
+    entry->frame_ = NULL;
+    insert_vme(&thread_current()->vm , entry);
+    kpage = frame_alloc(entry);
+    if (kpage != NULL) 
+      {
+        success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
+        if (success)
+          *esp = PHYS_BASE;
+        else
+          frame_free(entry);
+      }
+    if(success){
+      memset(kpage , 0 , PGSIZE);
+    }
+  #else 
+    kpage = palloc_get_page (PAL_USER | PAL_ZERO);
+    if (kpage != NULL) 
     {
       success = install_page (((uint8_t *) PHYS_BASE) - PGSIZE, kpage, true);
       if (success)
         *esp = PHYS_BASE;
       else
-        frame_free(entry);
-    }
-  if(success){
-    memset(kpage , 0 , PGSIZE);
-  }
-  #ifdef VM
-    if(success){
-      // 1.创建vm_entry 2.设置vm_entry fields 3.把vm_entry添加到hashtable中
-      struct vm_entry *entry = (struct vm_entry *)malloc(sizeof(struct vm_entry));
-      entry->writable = true;
-      entry->pg_number = pg_no(((uint8_t *) PHYS_BASE) - PGSIZE);
-      entry->page_type = SWAP_AREA;
-      entry->file = NULL;
-      entry->offset = 0;
-      entry->data_aside = PGSIZE;
-      insert_vme(&thread_current()->vm , entry);
+        palloc_free_page (kpage);
     }
   #endif
+
+
   
   return success;
 }

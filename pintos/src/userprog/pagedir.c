@@ -48,8 +48,6 @@ pagedir_destroy (uint32_t *pd)
             struct vm_entry *entry = find_vme(&thread_current()->vm , vaddr);
             if(entry->frame_ != NULL){
               frame_free(entry);
-            }else{
-              palloc_free_page (pte_get_page (*pte));
             }
           }
         palloc_free_page (pt);
