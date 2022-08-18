@@ -13,6 +13,7 @@
 #include "devices/input.h"
 #include "userprog/process.h"
 #include "lib/string.h"
+#include "vm/page.h"
 
 // 系统调用函数
 static void syscall_handler (struct intr_frame *);
@@ -224,6 +225,33 @@ syscall_handler (struct intr_frame *f UNUSED)
       f->eax = exec(cmd_line);
       break;
     }
+    case SYS_MMAP:
+    {
+      // mapid_t mmap (int fd, void *addr)
+      // int read (int fd, void *buffer, unsigned size)
+      if(!validate_user_ptr((int *)f->esp + 1)){
+        exit(-1);
+      }
+      if(!validate_user_ptr((int *)f->esp + 2)){
+        exit(-1);
+      }
+      
+      int fd = *((int *)f->esp + 1);
+      const void *addr = (void*)(*((int*)f->esp + 2));
+      mapid_t mapid = mmap(fd,addr);
+      f->eax = mapid;
+      break;
+    }
+    case SYS_MUNMAP:
+    {
+      // void munmap (mapid_t mapping)
+      if(!validate_user_ptr((uint32_t *)f->esp + 1)){
+        exit(-1);
+      }
+      mapid_t mapping = *((mapid_t *)f->esp + 1);
+      munmap(mapping);
+      break;
+    }
     default:
       break;
   }
@@ -236,6 +264,9 @@ static bool validate_user_ptr(const void *user_ptr){
 }
 
 void exit(int status){
+  #ifdef VM
+    munmap_all();
+  #endif
   struct thread *t = thread_current();
   t->exec_info_->exit_status = status;
   t->exec_info_->killed_by_exit = true;

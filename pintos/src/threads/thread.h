@@ -122,8 +122,8 @@ struct thread
     struct file* file_executing;
     /* ===================Project3 VM Part==================================. */
     struct hash vm; // 存放vm_entry的hash table
-
-
+    struct list mmap_list; // 存放mmap_entries
+    uint32_t next_mapid;
 
     /* Shared between thread.c and synch.c. */
     struct list_elem elem;              /**< List element. */

@@ -71,6 +71,7 @@ start_process (void *file_name_)
   #ifdef VM
     // initialize hashtable
     vm_init(&thread_current()->vm);
+    list_init(&thread_current()->mmap_list);
   #endif
   /* Initialize interrupt frame and load executable. */
   memset (&if_, 0, sizeof if_);
@@ -146,6 +147,7 @@ process_exit (void)
   uint32_t *pd;
   if(cur->file_executing != NULL){
     file_close(cur->file_executing);
+    cur->file_executing = NULL;
   }
   /* Destroy the current process's page directory and switch back
      to the kernel-only page directory. */
@@ -455,7 +457,6 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
         entry->pg_number = pg_no(upage);
         entry->writable = writable;
         entry->page_type = ELF_EXEC;
-        entry->file = file;
         entry->offset = ofs;
         entry->data_aside = page_read_bytes;
         entry->frame_ = NULL;
@@ -600,7 +601,7 @@ bool handle_vm_fault(struct vm_entry *entry){
       return false;
 
     /* Load this page. */
-    if (file_read_at (entry->file, kpage, entry->data_aside , entry->offset) != (int) entry->data_aside)
+    if (file_read_at (thread_current()->file_executing, kpage, entry->data_aside , entry->offset) != (int) entry->data_aside)
       {
         frame_free(entry);
         return false; 
@@ -629,6 +630,27 @@ bool handle_vm_fault(struct vm_entry *entry){
     if (kpage == NULL)
       return false;
     read_from_block(kpage,entry->block_index);
+    /* Add the page to the process's address space. */
+    if (!install_page ((uintptr_t)entry->pg_number << PGBITS, kpage, entry->writable)) 
+      {
+        frame_free(entry);
+        return false; 
+      }
+  }else if(entry->page_type == GEN_FILE){
+    // 处理mmap文件的加载
+    /* Get a page of memory. */
+    uint8_t *kpage = frame_alloc(entry);
+    if (kpage == NULL)
+      return false;
+
+    /* Load this page. */
+    if (file_read_at (entry->file, kpage, entry->data_aside , entry->file_offset) != (int) entry->data_aside)
+      {
+        frame_free(entry);
+        return false; 
+      }
+    memset (kpage + entry->data_aside, 0, PGSIZE - entry->data_aside);
+
     /* Add the page to the process's address space. */
     if (!install_page ((uintptr_t)entry->pg_number << PGBITS, kpage, entry->writable)) 
       {

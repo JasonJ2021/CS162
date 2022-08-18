@@ -512,6 +512,7 @@ init_thread (struct thread *t, const char *name, int priority)
   t->nice = 0;
   t->recent_cpu = 0;
   t->next_fd = 2; // 下一个fd为2
+  t->next_mapid = 1;
   // 这里准备exec information
   list_init(&t->children);
   if(strcmp(name , "main") != 0){

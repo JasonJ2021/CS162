@@ -116,6 +116,11 @@ uint8_t *evict_frame(struct vm_entry *entry)
 			// back page 被修改过，需要重新被写回到磁盘中
 			write_to_block(frame_->kpage, true, frame_->entry->block_index);
 		}
+	}else if(frame_->entry->page_type == GEN_FILE){
+		if(pagedir_is_dirty(pd,upage)){
+			pagedir_set_dirty(pd,upage , false);
+			file_write_at(entry->file,upage , PGSIZE,entry->file_offset);
+		}
 	}
 	// 设置相应页表和frame，并且把frame加到List中
 	frame_->entry->frame_ = NULL;
